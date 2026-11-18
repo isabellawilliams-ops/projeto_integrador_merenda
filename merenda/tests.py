@@ -1,3 +1,4 @@
+from datetime import date
 from decimal import Decimal
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError
@@ -6,8 +7,11 @@ from django.test import TestCase
 
 from .models import (
     BaseCalculo,
+    CalculoDiario,
     Cardapio,
+    FrequenciaDiaria,
     Ingrediente,
+    ItemCalculo,
     ItemReceita,
     PerfilUsuario,
     ReceitaFichaTecnica,
@@ -175,3 +179,141 @@ class CardapioReceitaItemTest(TestCase):
         )
         with self.assertRaises(ProtectedError):
             self.arroz.delete()
+
+
+class FrequenciaECalculoDiarioTest(TestCase):
+    def setUp(self):
+        self.usuario_portaria = Usuario.objects.create_user(
+            username='portaria1',
+            password='senha_segura_123',
+            nome_completo='João Secretário',
+            perfil=PerfilUsuario.FREQUENCIA
+        )
+        self.usuario_merendeira = Usuario.objects.create_user(
+            username='merendeira_chefe',
+            password='senha_segura_123',
+            nome_completo='Dona Benta',
+            perfil=PerfilUsuario.REFEITORIO
+        )
+        self.cardapio = Cardapio.objects.create(
+            nome='Almoço Terça',
+            refeicao=TipoRefeicao.ALMOCO
+        )
+        self.feijao = Ingrediente.objects.create(
+            nome='Feijão Preto',
+            unidade_padrao=UnidadeMedida.QUILOGRAMA
+        )
+        self.frequencia = FrequenciaDiaria.objects.create(
+            usuario_registro=self.usuario_portaria,
+            data_refeicao=date(2026, 11, 18),
+            refeicao_turno=TipoRefeicao.ALMOCO,
+            total_estudantes_presentes=150
+        )
+
+    def test_criar_frequencia_diaria(self):
+        self.assertEqual(self.frequencia.total_estudantes_presentes, 150)
+        self.assertEqual(self.frequencia.usuario_registro, self.usuario_portaria)
+        self.assertIn('150 alunos', str(self.frequencia))
+
+    def test_unicidade_frequencia_mesma_data_e_refeicao(self):
+        with self.assertRaises(IntegrityError):
+            FrequenciaDiaria.objects.create(
+                usuario_registro=self.usuario_portaria,
+                data_refeicao=date(2026, 11, 18),
+                refeicao_turno=TipoRefeicao.ALMOCO,
+                total_estudantes_presentes=160
+            )
+
+    def test_criar_calculo_diario(self):
+        calc = CalculoDiario.objects.create(
+            cardapio=self.cardapio,
+            frequencia=self.frequencia,
+            usuario_responsavel=self.usuario_merendeira,
+            data_calculo=date(2026, 11, 18),
+            conferido=False
+        )
+        self.assertFalse(calc.conferido)
+        self.assertEqual(calc.frequencia.total_estudantes_presentes, 150)
+        self.assertIn('Pendente de Conferência', str(calc))
+
+    def test_item_calculo_sem_ajuste(self):
+        calc = CalculoDiario.objects.create(
+            cardapio=self.cardapio,
+            frequencia=self.frequencia,
+            usuario_responsavel=self.usuario_merendeira,
+            data_calculo=date(2026, 11, 18)
+        )
+        item = ItemCalculo.objects.create(
+            calculo=calc,
+            ingrediente=self.feijao,
+            quantidade_calculada=Decimal('9.0000'),
+            unidade_medida=UnidadeMedida.QUILOGRAMA
+        )
+        self.assertEqual(item.quantidade_final, Decimal('9.0000'))
+        self.assertIn('Feijão Preto', str(item))
+
+    def test_rf09_ajuste_com_justificativa_sucesso(self):
+        calc = CalculoDiario.objects.create(
+            cardapio=self.cardapio,
+            frequencia=self.frequencia,
+            usuario_responsavel=self.usuario_merendeira,
+            data_calculo=date(2026, 11, 18)
+        )
+        item = ItemCalculo(
+            calculo=calc,
+            ingrediente=self.feijao,
+            quantidade_calculada=Decimal('9.0000'),
+            quantidade_ajustada=Decimal('10.5000'),
+            justificativa_ajuste='Acréscimo autorizado devido à visita pedagógica de outra escola.',
+            unidade_medida=UnidadeMedida.QUILOGRAMA
+        )
+        item.full_clean()
+        item.save()
+        self.assertEqual(item.quantidade_final, Decimal('10.5000'))
+
+    def test_rf09_ajuste_sem_justificativa_falha(self):
+        calc = CalculoDiario.objects.create(
+            cardapio=self.cardapio,
+            frequencia=self.frequencia,
+            usuario_responsavel=self.usuario_merendeira,
+            data_calculo=date(2026, 11, 18)
+        )
+        item = ItemCalculo(
+            calculo=calc,
+            ingrediente=self.feijao,
+            quantidade_calculada=Decimal('9.0000'),
+            quantidade_ajustada=Decimal('10.5000'),
+            justificativa_ajuste='',  # Sem justificativa obrigatória
+            unidade_medida=UnidadeMedida.QUILOGRAMA
+        )
+        with self.assertRaises(ValidationError) as ctx:
+            item.full_clean()
+        self.assertIn('justificativa_ajuste', ctx.exception.message_dict)
+
+    def test_ajuste_negativo_falha(self):
+        calc = CalculoDiario.objects.create(
+            cardapio=self.cardapio,
+            frequencia=self.frequencia,
+            usuario_responsavel=self.usuario_merendeira,
+            data_calculo=date(2026, 11, 18)
+        )
+        item = ItemCalculo(
+            calculo=calc,
+            ingrediente=self.feijao,
+            quantidade_calculada=Decimal('9.0000'),
+            quantidade_ajustada=Decimal('-1.0000'),
+            justificativa_ajuste='Teste',
+            unidade_medida=UnidadeMedida.QUILOGRAMA
+        )
+        with self.assertRaises(ValidationError):
+            item.full_clean()
+
+    def test_protecao_frequencia_referenciada_por_calculo(self):
+        CalculoDiario.objects.create(
+            cardapio=self.cardapio,
+            frequencia=self.frequencia,
+            usuario_responsavel=self.usuario_merendeira,
+            data_calculo=date(2026, 11, 18)
+        )
+        with self.assertRaises(ProtectedError):
+            self.frequencia.delete()

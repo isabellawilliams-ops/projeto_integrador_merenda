@@ -1,8 +1,11 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from .models import (
+    CalculoDiario,
     Cardapio,
+    FrequenciaDiaria,
     Ingrediente,
+    ItemCalculo,
     ItemReceita,
     ReceitaFichaTecnica,
     Usuario,
@@ -79,3 +82,35 @@ class ItemReceitaAdmin(admin.ModelAdmin):
     list_filter = ('unidade_medida', 'base_calculo', 'receita__cardapio')
     search_fields = ('receita__nome', 'ingrediente__nome')
     autocomplete_fields = ['ingrediente', 'receita']
+
+
+@admin.register(FrequenciaDiaria)
+class FrequenciaDiariaAdmin(admin.ModelAdmin):
+    list_display = ('data_refeicao', 'refeicao_turno', 'total_estudantes_presentes', 'usuario_registro', 'registrado_em')
+    list_filter = ('refeicao_turno', 'data_refeicao')
+    search_fields = ('usuario_registro__username', 'usuario_registro__nome_completo')
+    date_hierarchy = 'data_refeicao'
+
+
+class ItemCalculoInline(admin.TabularInline):
+    model = ItemCalculo
+    extra = 0
+    autocomplete_fields = ['ingrediente']
+    fields = ('ingrediente', 'quantidade_calculada', 'unidade_medida', 'quantidade_ajustada', 'justificativa_ajuste')
+
+
+@admin.register(CalculoDiario)
+class CalculoDiarioAdmin(admin.ModelAdmin):
+    list_display = ('data_calculo', 'cardapio', 'frequencia', 'usuario_responsavel', 'conferido', 'gerado_em')
+    list_filter = ('conferido', 'data_calculo', 'cardapio__refeicao')
+    search_fields = ('cardapio__nome', 'usuario_responsavel__username', 'usuario_responsavel__nome_completo')
+    date_hierarchy = 'data_calculo'
+    inlines = [ItemCalculoInline]
+
+
+@admin.register(ItemCalculo)
+class ItemCalculoAdmin(admin.ModelAdmin):
+    list_display = ('calculo', 'ingrediente', 'quantidade_calculada', 'unidade_medida', 'quantidade_ajustada')
+    list_filter = ('unidade_medida', 'calculo__conferido')
+    search_fields = ('ingrediente__nome', 'calculo__cardapio__nome', 'justificativa_ajuste')
+    autocomplete_fields = ['calculo', 'ingrediente']

@@ -1,4 +1,5 @@
 from decimal import Decimal
+from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -234,3 +235,164 @@ class ItemReceita(models.Model):
 
     def __str__(self):
         return f"{self.ingrediente.nome}: {self.quantidade_padrao} {self.get_unidade_medida_display()} ({self.get_base_calculo_display()})"
+
+
+class FrequenciaDiaria(models.Model):
+    usuario_registro = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name='frequencias_registradas',
+        verbose_name="Usuário Responsável",
+        help_text="Profissional que inseriu a contagem de frequência no sistema."
+    )
+    data_refeicao = models.DateField(
+        verbose_name="Data da Refeição",
+        help_text="Data para a qual a contagem de alunos é válida."
+    )
+    refeicao_turno = models.CharField(
+        max_length=30,
+        choices=TipoRefeicao.choices,
+        default=TipoRefeicao.ALMOCO,
+        verbose_name="Turno / Refeição",
+        help_text="Refeição ou turno escolar correspondente à contagem."
+    )
+    total_estudantes_presentes = models.PositiveIntegerField(
+        verbose_name="Total de Estudantes Presentes",
+        help_text="Quantidade de alunos confirmados presentes para esta refeição."
+    )
+    registrado_em = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Registrado em"
+    )
+
+    class Meta:
+        verbose_name = "Frequência Diária"
+        verbose_name_plural = "Frequências Diárias"
+        ordering = ['-data_refeicao', 'refeicao_turno']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['data_refeicao', 'refeicao_turno'],
+                name='unique_frequencia_por_data_refeicao'
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.data_refeicao.strftime('%d/%m/%Y')} - {self.get_refeicao_turno_display()}: {self.total_estudantes_presentes} alunos"
+
+
+class CalculoDiario(models.Model):
+    cardapio = models.ForeignKey(
+        Cardapio,
+        on_delete=models.PROTECT,
+        related_name='calculos',
+        verbose_name="Cardápio Utilizado"
+    )
+    frequencia = models.ForeignKey(
+        FrequenciaDiaria,
+        on_delete=models.PROTECT,
+        related_name='calculos',
+        verbose_name="Frequência Diária Utilizada"
+    )
+    usuario_responsavel = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name='calculos_executados',
+        verbose_name="Usuário Responsável",
+        help_text="Profissional responsável pela geração ou conferência do cálculo."
+    )
+    data_calculo = models.DateField(
+        verbose_name="Data do Planejamento",
+        help_text="Data de execução ou aplicação do cálculo."
+    )
+    gerado_em = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Gerado em"
+    )
+    conferido = models.BooleanField(
+        default=False,
+        verbose_name="Conferido pelo Refeitório",
+        help_text="Indica se a lista de ingredientes foi conferida e aprovada antes do preparo."
+    )
+
+    class Meta:
+        verbose_name = "Cálculo Diário"
+        verbose_name_plural = "Cálculos Diários"
+        ordering = ['-data_calculo', '-gerado_em']
+
+    def __str__(self):
+        status = "Conferido" if self.conferido else "Pendente de Conferência"
+        return f"Cálculo {self.data_calculo.strftime('%d/%m/%Y')} - {self.cardapio.nome} ({status})"
+
+
+class ItemCalculo(models.Model):
+    calculo = models.ForeignKey(
+        CalculoDiario,
+        on_delete=models.CASCADE,
+        related_name='itens',
+        verbose_name="Cálculo Diário"
+    )
+    ingrediente = models.ForeignKey(
+        Ingrediente,
+        on_delete=models.PROTECT,
+        related_name='itens_calculados',
+        verbose_name="Ingrediente"
+    )
+    quantidade_calculada = models.DecimalField(
+        max_digits=12,
+        decimal_places=4,
+        verbose_name="Quantidade Calculada",
+        help_text="Resultado do cálculo automático proporcional à frequência."
+    )
+    unidade_medida = models.CharField(
+        max_length=10,
+        choices=UnidadeMedida.choices,
+        verbose_name="Unidade de Medida"
+    )
+    quantidade_ajustada = models.DecimalField(
+        max_digits=12,
+        decimal_places=4,
+        null=True,
+        blank=True,
+        verbose_name="Quantidade Ajustada",
+        help_text="Ajuste manual autorizado pela equipe do refeitório (opcional)."
+    )
+    justificativa_ajuste = models.TextField(
+        blank=True,
+        verbose_name="Justificativa do Ajuste",
+        help_text="Obrigatório caso haja alteração manual da quantidade sugerida (RF09)."
+    )
+
+    class Meta:
+        verbose_name = "Item do Cálculo"
+        verbose_name_plural = "Itens do Cálculo"
+        ordering = ['calculo', 'ingrediente']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['calculo', 'ingrediente'],
+                name='unique_ingrediente_por_calculo'
+            )
+        ]
+
+    def clean(self):
+        super().clean()
+        # RF09: Justificativa obrigatória se houver quantidade ajustada
+        if self.quantidade_ajustada is not None:
+            if not self.justificativa_ajuste or not self.justificativa_ajuste.strip():
+                raise ValidationError({
+                    'justificativa_ajuste': 'A justificativa do ajuste é obrigatória quando uma quantidade ajustada é informada (RF09).'
+                })
+            if self.quantidade_ajustada < Decimal('0'):
+                raise ValidationError({
+                    'quantidade_ajustada': 'A quantidade ajustada não pode ser negativa.'
+                })
+
+    @property
+    def quantidade_final(self):
+        """Retorna a quantidade ajustada (se informada) ou a calculada automaticamente."""
+        if self.quantidade_ajustada is not None:
+            return self.quantidade_ajustada
+        return self.quantidade_calculada
+
+    def __str__(self):
+        qtd = self.quantidade_final
+        return f"{self.ingrediente.nome}: {qtd} {self.get_unidade_medida_display()}"
