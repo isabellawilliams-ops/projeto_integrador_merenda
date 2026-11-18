@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Ambientes Virtuais
+venv/
+env/
+ENV/
+.venv/
+
+# Banco de dados local
+*.sqlite3
+*.db
+
+# Logs e arquivos temporários
+*.log
+.DS_Store
+Thumbs.db

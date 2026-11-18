@@ -2,4 +2,6 @@ from django.apps import AppConfig
 
 
 class MerendaConfig(AppConfig):
+    default_auto_field = 'django.db.models.BigAutoField'
     name = 'merenda'
+    verbose_name = 'Alimentação Escolar (SPAE)'

@@ -24,9 +24,6 @@ Atualmente, o refeitório escolar planeja as refeições e a dosagem de ingredie
 ### 1.3 A Solução
 Um sistema web intuitivo, acessível pelo celular no refeitório, que cruza a **Frequência Diária de Estudantes Presentes** com as **Fichas Técnicas / Cardápio do Dia**, calculando em segundos a lista exata de ingredientes e suas respectivas quantidades em unidades compreensíveis (kg, g, L, ml, unidades).
 
-> [!IMPORTANT]
-> **Princípio Central de Domínio:** O sistema é uma **ferramenta de apoio ao planejamento operacional**, e **NÃO** deve inventar proporções ou substituir o julgamento humano. As receitas e quantidades-padrão são validadas pela equipe técnica/escola. A conferência humana antes do preparo é obrigatória no fluxo.
-
 ---
 
 ## 2. Personas e Perfis de Acesso (RBAC)
@@ -302,11 +299,11 @@ python manage.py test
 ## 9. Lista de Verificação de Implementação (Roadmap)
 
 - [ ] **Etapa 1: Setup do Projeto e Autenticação**
-  - [ ] Configuração do projeto Django com settings em português (`pt-br`, `America/Sao_Paulo`).
-  - [ ] Implementação do modelo `Usuario` com perfis (`refeitorio`, `frequencia`, `gestao`, `admin`).
+  - [x] Configuração do projeto Django com settings em português (`pt-br`, `America/Sao_Paulo`).
+  - [x] Implementação do modelo `Usuario` com perfis (`refeitorio`, `frequencia`, `gestao`, `admin`).
   - [ ] Tela de Login e controle de acesso por perfil.
 - [ ] **Etapa 2: Módulo de Cardápios e Ingredientes**
-  - [ ] CRUD de Ingredientes (com unidades padrão).
+  - [x] Model de Ingredientes com unidades padrão e admin (`g`, `kg`, `ml`, `L`, `un`).
   - [ ] CRUD de Cardápios e Fichas Técnicas (`ReceitaFichaTecnica`, `ItemReceita`).
   - [ ] Validação de quantidades e unidades.
 - [ ] **Etapa 3: Módulo de Frequência Diária**
