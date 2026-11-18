@@ -315,5 +315,5 @@ python manage.py test
   - [ ] Fluxo de conferência (`conferido=True`) e registro de ajuste justificado.
 - [ ] **Etapa 5: Refinamento Mobile & Validação com Usuárias**
   - [ ] Ajuste de layout para dispositivos móveis (botões grandes, contrastes).
-  - [ ] Seeds / Fixtures com receitas reais de merenda para testes e demonstração.
+  - [x] Seeds / Fixtures com receitas reais de merenda para testes e demonstração.
   - [ ] Testes de cálculos manuais vs automáticos.

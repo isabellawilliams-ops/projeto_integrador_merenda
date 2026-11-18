@@ -1,0 +1,720 @@
+[
+{
+  "model": "merenda.usuario",
+  "pk": 1,
+  "fields": {
+    "password": "pbkdf2_sha256$1500000$pyzcJXP48M2PErhlxIfm2s$LScYh835fo9x5BMdoHoF31Pl8UhZgTjr5YHE9xqrzGE=",
+    "last_login": null,
+    "is_superuser": true,
+    "username": "admin",
+    "first_name": "Administrador",
+    "last_name": "do Sistema",
+    "email": "admin@escola.gov.br",
+    "is_staff": true,
+    "is_active": true,
+    "date_joined": "2026-11-18T10:52:54.610Z",
+    "nome_completo": "Administrador do Sistema",
+    "perfil": "admin",
+    "ativo": true,
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "merenda.usuario",
+  "pk": 2,
+  "fields": {
+    "password": "pbkdf2_sha256$1500000$am9f0mXx5Q2pEDec5gdRbc$z2uM9eXuZRf1P8qxG/nVb/dR3GTNEHbqZUn8xVefLT8=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "nutricionista",
+    "first_name": "Dra.",
+    "last_name": "Ana Beatriz Silva",
+    "email": "nutricao@escola.gov.br",
+    "is_staff": true,
+    "is_active": true,
+    "date_joined": "2026-11-18T10:52:55.042Z",
+    "nome_completo": "Dra. Ana Beatriz Silva",
+    "perfil": "gestao",
+    "ativo": true,
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "merenda.usuario",
+  "pk": 3,
+  "fields": {
+    "password": "pbkdf2_sha256$1500000$7mNbCjeczS04nkHqLqlcL0$vJsOHYUaMmNeYFZ7SCTI6ScJOnP4zgsufOYfk70j/o8=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "merendeira",
+    "first_name": "Dona",
+    "last_name": "Maria de Fátima",
+    "email": "refeitorio@escola.gov.br",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-11-18T10:52:55.463Z",
+    "nome_completo": "Dona Maria de Fátima",
+    "perfil": "refeitorio",
+    "ativo": true,
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "merenda.usuario",
+  "pk": 4,
+  "fields": {
+    "password": "pbkdf2_sha256$1500000$JAgLv0BrGrn3t88a4Tozbm$7ezdaKqkNCL2t+cPMFL9lDspfYoIjW+O6N1rC2Nzib4=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "secretaria",
+    "first_name": "Carlos",
+    "last_name": "Eduardo Santos",
+    "email": "secretaria@escola.gov.br",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-11-18T10:52:55.890Z",
+    "nome_completo": "Carlos Eduardo Santos",
+    "perfil": "frequencia",
+    "ativo": true,
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "merenda.ingrediente",
+  "pk": 1,
+  "fields": {
+    "nome": "Arroz Branco Tipo 1",
+    "unidade_padrao": "kg",
+    "observacoes": "Armazenar em local seco, ventilado e sobre estrados."
+  }
+},
+{
+  "model": "merenda.ingrediente",
+  "pk": 2,
+  "fields": {
+    "nome": "Feijão Carioca",
+    "unidade_padrao": "kg",
+    "observacoes": "Grãos selecionados tipo 1. Guardar em despensa seca."
+  }
+},
+{
+  "model": "merenda.ingrediente",
+  "pk": 3,
+  "fields": {
+    "nome": "Feijão Preto",
+    "unidade_padrao": "kg",
+    "observacoes": "Grãos selecionados tipo 1."
+  }
+},
+{
+  "model": "merenda.ingrediente",
+  "pk": 4,
+  "fields": {
+    "nome": "Peito de Frango em Cubos",
+    "unidade_padrao": "kg",
+    "observacoes": "Manter congelado a -18°C até o dia do descongelamento."
+  }
+},
+{
+  "model": "merenda.ingrediente",
+  "pk": 5,
+  "fields": {
+    "nome": "Carne Bovina Moída (Patinho/Acém)",
+    "unidade_padrao": "kg",
+    "observacoes": "Manter refrigerada ou congelada."
+  }
+},
+{
+  "model": "merenda.ingrediente",
+  "pk": 6,
+  "fields": {
+    "nome": "Óleo de Soja Refinado",
+    "unidade_padrao": "L",
+    "observacoes": "Garrafas de 900ml ou galão 5L. Local protegido de luz."
+  }
+},
+{
+  "model": "merenda.ingrediente",
+  "pk": 7,
+  "fields": {
+    "nome": "Sal Refinado Iodado",
+    "unidade_padrao": "kg",
+    "observacoes": "Conservar em recipiente fechado e seco."
+  }
+},
+{
+  "model": "merenda.ingrediente",
+  "pk": 8,
+  "fields": {
+    "nome": "Alho Triturado",
+    "unidade_padrao": "kg",
+    "observacoes": "Uso para tempero diário das preparações."
+  }
+},
+{
+  "model": "merenda.ingrediente",
+  "pk": 9,
+  "fields": {
+    "nome": "Cebola Branca",
+    "unidade_padrao": "kg",
+    "observacoes": "Hortifrúti fresco. Higienizar e picar no dia."
+  }
+},
+{
+  "model": "merenda.ingrediente",
+  "pk": 10,
+  "fields": {
+    "nome": "Tomate Salada Fresco",
+    "unidade_padrao": "kg",
+    "observacoes": "Frutos maduros e higienizados."
+  }
+},
+{
+  "model": "merenda.ingrediente",
+  "pk": 11,
+  "fields": {
+    "nome": "Cenoura Fresca",
+    "unidade_padrao": "kg",
+    "observacoes": "Lavar, descascar e cortar em cubos ou rodelas."
+  }
+},
+{
+  "model": "merenda.ingrediente",
+  "pk": 12,
+  "fields": {
+    "nome": "Batata Inglesa",
+    "unidade_padrao": "kg",
+    "observacoes": "Armazenar em local arejado, escuro e seco."
+  }
+},
+{
+  "model": "merenda.ingrediente",
+  "pk": 13,
+  "fields": {
+    "nome": "Macarrão Espaguete com Ovos",
+    "unidade_padrao": "kg",
+    "observacoes": "Massa seca de sêmola."
+  }
+},
+{
+  "model": "merenda.ingrediente",
+  "pk": 14,
+  "fields": {
+    "nome": "Molho de Tomate Tradicional",
+    "unidade_padrao": "kg",
+    "observacoes": "Embalagem sachê/tetra pak."
+  }
+},
+{
+  "model": "merenda.ingrediente",
+  "pk": 15,
+  "fields": {
+    "nome": "Banana Prata",
+    "unidade_padrao": "un",
+    "observacoes": "Fruta fresca para sobremesa ou lanches."
+  }
+},
+{
+  "model": "merenda.ingrediente",
+  "pk": 16,
+  "fields": {
+    "nome": "Maçã Nacional Fuji",
+    "unidade_padrao": "un",
+    "observacoes": "Fruta fresca, consumo in natura."
+  }
+},
+{
+  "model": "merenda.ingrediente",
+  "pk": 17,
+  "fields": {
+    "nome": "Leite Integral Pasteurizado",
+    "unidade_padrao": "L",
+    "observacoes": "Bebida láctea/leite para lanches matutinos."
+  }
+},
+{
+  "model": "merenda.ingrediente",
+  "pk": 18,
+  "fields": {
+    "nome": "Pão Francês Fresco",
+    "unidade_padrao": "un",
+    "observacoes": "Entregue diariamente pela padaria parceira."
+  }
+},
+{
+  "model": "merenda.ingrediente",
+  "pk": 19,
+  "fields": {
+    "nome": "Margarina Vegetal com Sal",
+    "unidade_padrao": "kg",
+    "observacoes": "Armazenar sob refrigeração de 2°C a 8°C."
+  }
+},
+{
+  "model": "merenda.ingrediente",
+  "pk": 20,
+  "fields": {
+    "nome": "Aveia em Flocos Finos",
+    "unidade_padrao": "kg",
+    "observacoes": "Cereal matinal para preparo de vitaminas."
+  }
+},
+{
+  "model": "merenda.ingrediente",
+  "pk": 21,
+  "fields": {
+    "nome": "Ovos de Galinha Vermelhos",
+    "unidade_padrao": "un",
+    "observacoes": "Ovos frescos inspecionados."
+  }
+},
+{
+  "model": "merenda.cardapio",
+  "pk": 1,
+  "fields": {
+    "nome": "Almoço Tradicional (Arroz, Feijão e Frango com Legumes)",
+    "descricao": "Almoço nutritivo e balanceado com carboidratos, proteínas e salada/legumes.",
+    "refeicao": "almoco",
+    "data_referencia": "2026-11-18",
+    "ativo": true
+  }
+},
+{
+  "model": "merenda.cardapio",
+  "pk": 2,
+  "fields": {
+    "nome": "Lanche da Manhã (Vitamina de Banana e Pão com Margarina)",
+    "descricao": "Lanche matinal para início da jornada de tempo integral.",
+    "refeicao": "lanche_manha",
+    "data_referencia": "2026-11-18",
+    "ativo": true
+  }
+},
+{
+  "model": "merenda.receitafichatecnica",
+  "pk": 1,
+  "fields": {
+    "cardapio": 1,
+    "nome": "Arroz Branco Soltinho",
+    "modo_preparo": "Refogar o alho no óleo, acrescentar o arroz cru e a água fervente. Cozinhar até secar.",
+    "fator_rendimento": "1.000"
+  }
+},
+{
+  "model": "merenda.receitafichatecnica",
+  "pk": 2,
+  "fields": {
+    "cardapio": 1,
+    "nome": "Feijão Carioca da Casa",
+    "modo_preparo": "Deixar de molho por 12h. Cozinhar na pressão e temperar com alho, cebola e sal.",
+    "fator_rendimento": "1.000"
+  }
+},
+{
+  "model": "merenda.receitafichatecnica",
+  "pk": 3,
+  "fields": {
+    "cardapio": 1,
+    "nome": "Frango com Cenoura e Batata",
+    "modo_preparo": "Dourar a carne temperada, acrescentar os legumes picados e água até amaciar.",
+    "fator_rendimento": "1.000"
+  }
+},
+{
+  "model": "merenda.receitafichatecnica",
+  "pk": 4,
+  "fields": {
+    "cardapio": 1,
+    "nome": "Sobremesa: Banana Prata",
+    "modo_preparo": "Higienizar as cascas com solução clorada e distribuir aos alunos.",
+    "fator_rendimento": "1.000"
+  }
+},
+{
+  "model": "merenda.receitafichatecnica",
+  "pk": 5,
+  "fields": {
+    "cardapio": 2,
+    "nome": "Vitamina de Banana com Aveia",
+    "modo_preparo": "Bater leite, banana e aveia em liquidificador industrial.",
+    "fator_rendimento": "1.000"
+  }
+},
+{
+  "model": "merenda.receitafichatecnica",
+  "pk": 6,
+  "fields": {
+    "cardapio": 2,
+    "nome": "Pão Francês com Margarina",
+    "modo_preparo": "Cortar o pão ao meio e passar margarina.",
+    "fator_rendimento": "1.000"
+  }
+},
+{
+  "model": "merenda.itemreceita",
+  "pk": 1,
+  "fields": {
+    "receita": 1,
+    "ingrediente": 1,
+    "quantidade_padrao": "0.0800",
+    "unidade_medida": "kg",
+    "base_calculo": "por_aluno"
+  }
+},
+{
+  "model": "merenda.itemreceita",
+  "pk": 2,
+  "fields": {
+    "receita": 1,
+    "ingrediente": 6,
+    "quantidade_padrao": "0.0050",
+    "unidade_medida": "L",
+    "base_calculo": "por_aluno"
+  }
+},
+{
+  "model": "merenda.itemreceita",
+  "pk": 3,
+  "fields": {
+    "receita": 1,
+    "ingrediente": 8,
+    "quantidade_padrao": "0.0020",
+    "unidade_medida": "kg",
+    "base_calculo": "por_aluno"
+  }
+},
+{
+  "model": "merenda.itemreceita",
+  "pk": 4,
+  "fields": {
+    "receita": 1,
+    "ingrediente": 7,
+    "quantidade_padrao": "0.0020",
+    "unidade_medida": "kg",
+    "base_calculo": "por_aluno"
+  }
+},
+{
+  "model": "merenda.itemreceita",
+  "pk": 5,
+  "fields": {
+    "receita": 2,
+    "ingrediente": 2,
+    "quantidade_padrao": "0.0600",
+    "unidade_medida": "kg",
+    "base_calculo": "por_aluno"
+  }
+},
+{
+  "model": "merenda.itemreceita",
+  "pk": 6,
+  "fields": {
+    "receita": 2,
+    "ingrediente": 6,
+    "quantidade_padrao": "0.0030",
+    "unidade_medida": "L",
+    "base_calculo": "por_aluno"
+  }
+},
+{
+  "model": "merenda.itemreceita",
+  "pk": 7,
+  "fields": {
+    "receita": 2,
+    "ingrediente": 9,
+    "quantidade_padrao": "0.0050",
+    "unidade_medida": "kg",
+    "base_calculo": "por_aluno"
+  }
+},
+{
+  "model": "merenda.itemreceita",
+  "pk": 8,
+  "fields": {
+    "receita": 2,
+    "ingrediente": 8,
+    "quantidade_padrao": "0.0020",
+    "unidade_medida": "kg",
+    "base_calculo": "por_aluno"
+  }
+},
+{
+  "model": "merenda.itemreceita",
+  "pk": 9,
+  "fields": {
+    "receita": 2,
+    "ingrediente": 7,
+    "quantidade_padrao": "0.0020",
+    "unidade_medida": "kg",
+    "base_calculo": "por_aluno"
+  }
+},
+{
+  "model": "merenda.itemreceita",
+  "pk": 10,
+  "fields": {
+    "receita": 3,
+    "ingrediente": 4,
+    "quantidade_padrao": "0.1000",
+    "unidade_medida": "kg",
+    "base_calculo": "por_aluno"
+  }
+},
+{
+  "model": "merenda.itemreceita",
+  "pk": 11,
+  "fields": {
+    "receita": 3,
+    "ingrediente": 11,
+    "quantidade_padrao": "0.0300",
+    "unidade_medida": "kg",
+    "base_calculo": "por_aluno"
+  }
+},
+{
+  "model": "merenda.itemreceita",
+  "pk": 12,
+  "fields": {
+    "receita": 3,
+    "ingrediente": 12,
+    "quantidade_padrao": "0.0400",
+    "unidade_medida": "kg",
+    "base_calculo": "por_aluno"
+  }
+},
+{
+  "model": "merenda.itemreceita",
+  "pk": 13,
+  "fields": {
+    "receita": 3,
+    "ingrediente": 6,
+    "quantidade_padrao": "0.0040",
+    "unidade_medida": "L",
+    "base_calculo": "por_aluno"
+  }
+},
+{
+  "model": "merenda.itemreceita",
+  "pk": 14,
+  "fields": {
+    "receita": 3,
+    "ingrediente": 7,
+    "quantidade_padrao": "0.0025",
+    "unidade_medida": "kg",
+    "base_calculo": "por_aluno"
+  }
+},
+{
+  "model": "merenda.itemreceita",
+  "pk": 15,
+  "fields": {
+    "receita": 4,
+    "ingrediente": 15,
+    "quantidade_padrao": "1.0000",
+    "unidade_medida": "un",
+    "base_calculo": "por_aluno"
+  }
+},
+{
+  "model": "merenda.itemreceita",
+  "pk": 16,
+  "fields": {
+    "receita": 5,
+    "ingrediente": 17,
+    "quantidade_padrao": "0.2000",
+    "unidade_medida": "L",
+    "base_calculo": "por_aluno"
+  }
+},
+{
+  "model": "merenda.itemreceita",
+  "pk": 17,
+  "fields": {
+    "receita": 5,
+    "ingrediente": 15,
+    "quantidade_padrao": "0.5000",
+    "unidade_medida": "un",
+    "base_calculo": "por_aluno"
+  }
+},
+{
+  "model": "merenda.itemreceita",
+  "pk": 18,
+  "fields": {
+    "receita": 5,
+    "ingrediente": 20,
+    "quantidade_padrao": "0.0200",
+    "unidade_medida": "kg",
+    "base_calculo": "por_aluno"
+  }
+},
+{
+  "model": "merenda.itemreceita",
+  "pk": 19,
+  "fields": {
+    "receita": 6,
+    "ingrediente": 18,
+    "quantidade_padrao": "1.0000",
+    "unidade_medida": "un",
+    "base_calculo": "por_aluno"
+  }
+},
+{
+  "model": "merenda.itemreceita",
+  "pk": 20,
+  "fields": {
+    "receita": 6,
+    "ingrediente": 19,
+    "quantidade_padrao": "0.0100",
+    "unidade_medida": "kg",
+    "base_calculo": "por_aluno"
+  }
+},
+{
+  "model": "merenda.frequenciadiaria",
+  "pk": 1,
+  "fields": {
+    "usuario_registro": 4,
+    "data_refeicao": "2026-11-18",
+    "refeicao_turno": "almoco",
+    "total_estudantes_presentes": 120,
+    "registrado_em": "2026-11-18T10:52:56.417Z"
+  }
+},
+{
+  "model": "merenda.calculodiario",
+  "pk": 1,
+  "fields": {
+    "cardapio": 1,
+    "frequencia": 1,
+    "usuario_responsavel": 3,
+    "data_calculo": "2026-11-18",
+    "gerado_em": "2026-11-18T10:52:56.419Z",
+    "conferido": true
+  }
+},
+{
+  "model": "merenda.itemcalculo",
+  "pk": 1,
+  "fields": {
+    "calculo": 1,
+    "ingrediente": 8,
+    "quantidade_calculada": "0.4800",
+    "unidade_medida": "kg",
+    "quantidade_ajustada": null,
+    "justificativa_ajuste": ""
+  }
+},
+{
+  "model": "merenda.itemcalculo",
+  "pk": 2,
+  "fields": {
+    "calculo": 1,
+    "ingrediente": 1,
+    "quantidade_calculada": "9.6000",
+    "unidade_medida": "kg",
+    "quantidade_ajustada": null,
+    "justificativa_ajuste": ""
+  }
+},
+{
+  "model": "merenda.itemcalculo",
+  "pk": 3,
+  "fields": {
+    "calculo": 1,
+    "ingrediente": 7,
+    "quantidade_calculada": "0.7800",
+    "unidade_medida": "kg",
+    "quantidade_ajustada": null,
+    "justificativa_ajuste": ""
+  }
+},
+{
+  "model": "merenda.itemcalculo",
+  "pk": 4,
+  "fields": {
+    "calculo": 1,
+    "ingrediente": 6,
+    "quantidade_calculada": "1.4400",
+    "unidade_medida": "L",
+    "quantidade_ajustada": null,
+    "justificativa_ajuste": ""
+  }
+},
+{
+  "model": "merenda.itemcalculo",
+  "pk": 5,
+  "fields": {
+    "calculo": 1,
+    "ingrediente": 9,
+    "quantidade_calculada": "0.6000",
+    "unidade_medida": "kg",
+    "quantidade_ajustada": null,
+    "justificativa_ajuste": ""
+  }
+},
+{
+  "model": "merenda.itemcalculo",
+  "pk": 6,
+  "fields": {
+    "calculo": 1,
+    "ingrediente": 2,
+    "quantidade_calculada": "7.2000",
+    "unidade_medida": "kg",
+    "quantidade_ajustada": null,
+    "justificativa_ajuste": ""
+  }
+},
+{
+  "model": "merenda.itemcalculo",
+  "pk": 7,
+  "fields": {
+    "calculo": 1,
+    "ingrediente": 12,
+    "quantidade_calculada": "4.8000",
+    "unidade_medida": "kg",
+    "quantidade_ajustada": null,
+    "justificativa_ajuste": ""
+  }
+},
+{
+  "model": "merenda.itemcalculo",
+  "pk": 8,
+  "fields": {
+    "calculo": 1,
+    "ingrediente": 11,
+    "quantidade_calculada": "3.6000",
+    "unidade_medida": "kg",
+    "quantidade_ajustada": null,
+    "justificativa_ajuste": ""
+  }
+},
+{
+  "model": "merenda.itemcalculo",
+  "pk": 9,
+  "fields": {
+    "calculo": 1,
+    "ingrediente": 4,
+    "quantidade_calculada": "12.0000",
+    "unidade_medida": "kg",
+    "quantidade_ajustada": null,
+    "justificativa_ajuste": ""
+  }
+},
+{
+  "model": "merenda.itemcalculo",
+  "pk": 10,
+  "fields": {
+    "calculo": 1,
+    "ingrediente": 15,
+    "quantidade_calculada": "120.0000",
+    "unidade_medida": "un",
+    "quantidade_ajustada": null,
+    "justificativa_ajuste": ""
+  }
+}
+]
