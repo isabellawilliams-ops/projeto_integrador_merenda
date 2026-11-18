@@ -304,8 +304,8 @@ python manage.py test
   - [ ] Tela de Login e controle de acesso por perfil.
 - [ ] **Etapa 2: Módulo de Cardápios e Ingredientes**
   - [x] Model de Ingredientes com unidades padrão e admin (`g`, `kg`, `ml`, `L`, `un`).
-  - [ ] CRUD de Cardápios e Fichas Técnicas (`ReceitaFichaTecnica`, `ItemReceita`).
-  - [ ] Validação de quantidades e unidades.
+  - [x] CRUD de Cardápios e Fichas Técnicas (`ReceitaFichaTecnica`, `ItemReceita`).
+  - [x] Validação de quantidades e unidades.
 - [ ] **Etapa 3: Módulo de Frequência Diária**
   - [ ] Formulário ágil mobile para lançamento de presença por data e turno/refeição.
   - [ ] Histórico de presenças.
