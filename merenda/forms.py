@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import AuthenticationForm
 
-from .models import FrequenciaDiaria, TipoRefeicao
+from .models import Cardapio, FrequenciaDiaria, ItemCalculo, TipoRefeicao
 
 
 class LoginForm(AuthenticationForm):
@@ -82,3 +82,45 @@ class FrequenciaDiariaForm(forms.ModelForm):
         if total is None or total <= 0:
             raise forms.ValidationError("A quantidade de estudantes deve ser maior que zero.")
         return total
+
+
+class CalculoGerarForm(forms.Form):
+    cardapio = forms.ModelChoiceField(
+        queryset=Cardapio.objects.filter(ativo=True),
+        label="Cardápio Previsto",
+        widget=forms.Select(attrs={'class': 'form-select form-select-lg'}),
+        empty_label="Selecione o cardápio da refeição...",
+    )
+    frequencia = forms.ModelChoiceField(
+        queryset=FrequenciaDiaria.objects.all().order_by('-data_refeicao'),
+        label="Frequência de Estudantes",
+        widget=forms.Select(attrs={'class': 'form-select form-select-lg'}),
+        empty_label="Selecione a frequência do dia...",
+    )
+
+
+class ItemCalculoAjusteForm(forms.ModelForm):
+    class Meta:
+        model = ItemCalculo
+        fields = ['quantidade_ajustada', 'justificativa_ajuste']
+        widgets = {
+            'quantidade_ajustada': forms.NumberInput(
+                attrs={
+                    'class': 'form-control form-control-lg',
+                    'step': '0.001',
+                    'min': '0',
+                    'placeholder': 'Digite a quantidade corrigida...',
+                }
+            ),
+            'justificativa_ajuste': forms.Textarea(
+                attrs={
+                    'class': 'form-control',
+                    'rows': 3,
+                    'placeholder': 'Motivo obrigatório do ajuste (ex: evento comemorativo, sobra anterior reaproveitada)...',
+                }
+            ),
+        }
+        labels = {
+            'quantidade_ajustada': 'Quantidade Ajustada',
+            'justificativa_ajuste': 'Justificativa do Ajuste (Obrigatória - RF09)',
+        }
