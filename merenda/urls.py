@@ -6,6 +6,15 @@ urlpatterns = [
     path('', views.home_view, name='home'),
     path('login/', views.SPALoginView.as_view(), name='login'),
     path('logout/', views.logout_view, name='logout'),
+    path('meu-perfil/', views.meu_perfil_view, name='meu_perfil'),
+    path('alterar-senha/', views.alterar_senha_view, name='alterar_senha'),
+
+    # Gestão Administrativa de Usuários e Perfis (RF01 - RBAC)
+    path('usuarios/', views.usuario_lista_view, name='usuario_lista'),
+    path('usuarios/novo/', views.usuario_criar_view, name='usuario_criar'),
+    path('usuarios/<int:pk>/editar/', views.usuario_editar_view, name='usuario_editar'),
+    path('usuarios/<int:pk>/redefinir-senha/', views.usuario_redefinir_senha_view, name='usuario_redefinir_senha'),
+    path('usuarios/<int:pk>/alternar-status/', views.usuario_alternar_status_view, name='usuario_alternar_status'),
 
     # Frequência Diária
     path('frequencia/', views.frequencia_lista_view, name='frequencia_lista'),

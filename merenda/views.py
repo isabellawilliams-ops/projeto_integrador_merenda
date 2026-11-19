@@ -1,7 +1,7 @@
 import csv
 from decimal import Decimal
 from django.contrib import messages
-from django.contrib.auth import logout
+from django.contrib.auth import logout, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView
 from django.db import models
@@ -12,6 +12,7 @@ from django.utils import timezone
 from django.utils.text import slugify
 
 from .forms import (
+    AlterarPropriaSenhaForm,
     CalculoGerarForm,
     CardapioForm,
     FrequenciaDiariaForm,
@@ -19,7 +20,11 @@ from .forms import (
     ItemCalculoAjusteForm,
     ItemReceitaForm,
     LoginForm,
+    MeuPerfilForm,
     ReceitaFichaTecnicaForm,
+    UsuarioCriacaoForm,
+    UsuarioEdicaoForm,
+    UsuarioRedefinirSenhaForm,
 )
 from .models import (
     CalculoDiario,
@@ -34,22 +39,19 @@ from .models import (
     UnidadeMedida,
     Usuario,
 )
+from .permissions import (
+    admin_requerido,
+    frequencia_requerida,
+    gestao_requerida,
+    perfil_requerido,
+    pode_conferir_calculo,
+    pode_gerenciar_cadastros,
+    pode_gerenciar_usuarios,
+    pode_lancar_frequencia,
+    refeitorio_requerido,
+    tem_perfil,
+)
 from .services import CalculoService
-
-
-# ========================================================
-# HELPER DE PERMISSÃO (RBAC)
-# ========================================================
-
-def pode_gerenciar_cadastros(user: Usuario) -> bool:
-    """Verifica se o usuário tem perfil de Gestão ou Administrador para cadastros."""
-    if not user.is_authenticated:
-        return False
-    return (
-        user.is_superuser
-        or user.is_staff
-        or user.perfil in (PerfilUsuario.GESTAO, PerfilUsuario.ADMIN)
-    )
 
 
 # ========================================================
@@ -81,6 +83,194 @@ def logout_view(request):
         messages.info(request, "Sessão encerrada com sucesso.")
         logout(request)
     return redirect('login')
+
+
+# ========================================================
+# AUTOATENDIMENTO DO USUÁRIO (PERFIL E ALTERAÇÃO DE SENHA)
+# ========================================================
+
+@login_required
+def meu_perfil_view(request):
+    """Exibe e permite a atualização das informações cadastrais do próprio usuário logado."""
+    if request.method == 'POST':
+        form = MeuPerfilForm(request.POST, instance=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Seus dados de perfil foram atualizados com sucesso!")
+            return redirect('meu_perfil')
+    else:
+        form = MeuPerfilForm(instance=request.user)
+
+    context = {
+        'form': form,
+        'usuario': request.user,
+    }
+    return render(request, 'usuarios/meu_perfil.html', context)
+
+
+@login_required
+def alterar_senha_view(request):
+    """Permite ao próprio usuário logado alterar sua senha de acesso de forma segura."""
+    if request.method == 'POST':
+        form = AlterarPropriaSenhaForm(user=request.user, data=request.POST)
+        if form.is_valid():
+            user = form.save()
+            # Mantém a sessão do usuário ativa após a troca de hash de senha
+            update_session_auth_hash(request, user)
+            messages.success(request, "Sua senha foi alterada com sucesso!")
+            return redirect('meu_perfil')
+    else:
+        form = AlterarPropriaSenhaForm(user=request.user)
+
+    context = {
+        'form': form,
+    }
+    return render(request, 'usuarios/alterar_senha.html', context)
+
+
+# ========================================================
+# GESTÃO ADMINISTRATIVA DE USUÁRIOS E PERFIS RBAC (ADMIN)
+# ========================================================
+
+@admin_requerido
+def usuario_lista_view(request):
+    """Listagem completa de usuários com filtros por perfil e status (ativo/inativo)."""
+    usuarios = Usuario.objects.all().order_by('nome_completo', 'username')
+
+    q = request.GET.get('q', '').strip()
+    if q:
+        usuarios = usuarios.filter(
+            models.Q(username__icontains=q)
+            | models.Q(nome_completo__icontains=q)
+            | models.Q(first_name__icontains=q)
+            | models.Q(last_name__icontains=q)
+        )
+
+    perfil_filtro = request.GET.get('perfil', '').strip()
+    if perfil_filtro:
+        usuarios = usuarios.filter(perfil=perfil_filtro)
+
+    status_filtro = request.GET.get('status', '').strip()
+    if status_filtro == 'ativo':
+        usuarios = usuarios.filter(ativo=True)
+    elif status_filtro == 'inativo':
+        usuarios = usuarios.filter(ativo=False)
+
+    total_usuarios = Usuario.objects.count()
+    total_ativos = Usuario.objects.filter(ativo=True).count()
+    total_inativos = Usuario.objects.filter(ativo=False).count()
+
+    context = {
+        'usuarios': usuarios,
+        'q': q,
+        'perfil_filtro': perfil_filtro,
+        'status_filtro': status_filtro,
+        'perfis_choices': PerfilUsuario.choices,
+        'total_usuarios': total_usuarios,
+        'total_ativos': total_ativos,
+        'total_inativos': total_inativos,
+    }
+    return render(request, 'usuarios/lista.html', context)
+
+
+@admin_requerido
+def usuario_criar_view(request):
+    """Cadastro de novo usuário com definição de perfil de acesso e senha inicial."""
+    if request.method == 'POST':
+        form = UsuarioCriacaoForm(request.POST)
+        if form.is_valid():
+            novo_usuario = form.save()
+            messages.success(
+                request,
+                f"Usuário '{novo_usuario.username}' ({novo_usuario.get_perfil_display()}) cadastrado com sucesso!"
+            )
+            return redirect('usuario_lista')
+    else:
+        form = UsuarioCriacaoForm()
+
+    context = {
+        'form': form,
+        'titulo': 'Novo Usuário do Sistema',
+        'subtitulo': 'Cadastre um novo profissional definindo suas permissões de acesso (RBAC).',
+        'modo_edicao': False,
+    }
+    return render(request, 'usuarios/form.html', context)
+
+
+@admin_requerido
+def usuario_editar_view(request, pk):
+    """Edição de dados cadastrais, perfil de acesso e status de usuário existente."""
+    usuario_alvo = get_object_or_404(Usuario, pk=pk)
+
+    if request.method == 'POST':
+        form = UsuarioEdicaoForm(request.POST, instance=usuario_alvo)
+        if form.is_valid():
+            usuario_editado = form.save()
+            messages.success(
+                request,
+                f"Cadastro do usuário '{usuario_editado.username}' atualizado com sucesso!"
+            )
+            return redirect('usuario_lista')
+    else:
+        form = UsuarioEdicaoForm(instance=usuario_alvo)
+
+    context = {
+        'form': form,
+        'usuario_alvo': usuario_alvo,
+        'titulo': f'Editar Usuário: {usuario_alvo.username}',
+        'subtitulo': 'Altere o nome completo, o perfil de permissões ou o status da conta.',
+        'modo_edicao': True,
+    }
+    return render(request, 'usuarios/form.html', context)
+
+
+@admin_requerido
+def usuario_redefinir_senha_view(request, pk):
+    """Redefinição direta de senha de usuário pela equipe administradora."""
+    usuario_alvo = get_object_or_404(Usuario, pk=pk)
+
+    if request.method == 'POST':
+        form = UsuarioRedefinirSenhaForm(request.POST)
+        if form.is_valid():
+            nova_senha = form.cleaned_data['nova_senha']
+            usuario_alvo.set_password(nova_senha)
+            usuario_alvo.save()
+            messages.success(
+                request,
+                f"Senha do usuário '{usuario_alvo.username}' redefinida com sucesso!"
+            )
+            return redirect('usuario_lista')
+    else:
+        form = UsuarioRedefinirSenhaForm()
+
+    context = {
+        'form': form,
+        'usuario_alvo': usuario_alvo,
+    }
+    return render(request, 'usuarios/redefinir_senha.html', context)
+
+
+@admin_requerido
+def usuario_alternar_status_view(request, pk):
+    """Ativa ou desativa a conta de um usuário via POST rápido."""
+    if request.method == 'POST':
+        usuario_alvo = get_object_or_404(Usuario, pk=pk)
+
+        # Proteção: Impede o administrador de desativar a si próprio
+        if usuario_alvo == request.user:
+            messages.error(request, "Ação bloqueada: você não pode desativar sua própria conta de administrador.")
+            return redirect('usuario_lista')
+
+        usuario_alvo.ativo = not usuario_alvo.ativo
+        usuario_alvo.save()
+
+        status_str = "ativada" if usuario_alvo.ativo else "desativada"
+        messages.success(
+            request,
+            f"A conta do usuário '{usuario_alvo.username}' foi {status_str} com sucesso."
+        )
+    return redirect('usuario_lista')
+
 
 
 @login_required
@@ -171,7 +361,7 @@ def frequencia_lista_view(request):
     return render(request, 'frequencia/lista.html', context)
 
 
-@login_required
+@frequencia_requerida
 def frequencia_registro_view(request):
     """Formulário ágil mobile-first para lançamento de presença."""
     hoje = timezone.localdate()
@@ -216,7 +406,7 @@ def frequencia_registro_view(request):
     return render(request, 'frequencia/form.html', context)
 
 
-@login_required
+@frequencia_requerida
 def frequencia_editar_view(request, pk):
     """Edição de uma contagem de frequência existente."""
     frequencia = get_object_or_404(FrequenciaDiaria, pk=pk)
@@ -244,7 +434,7 @@ def frequencia_editar_view(request, pk):
     return render(request, 'frequencia/form.html', context)
 
 
-@login_required
+@frequencia_requerida
 def frequencia_excluir_view(request, pk):
     """Exclusão segura de registro de frequência com validação de dependências."""
     frequencia = get_object_or_404(FrequenciaDiaria, pk=pk)
@@ -697,7 +887,7 @@ def calculo_lista_view(request):
     return render(request, 'calculos/lista.html', context)
 
 
-@login_required
+@refeitorio_requerido
 def calculo_conferir_view(request, pk):
     """Marca ou desmarca um cálculo diário como conferido pelo refeitório."""
     calculo = get_object_or_404(CalculoDiario, pk=pk)
@@ -712,7 +902,7 @@ def calculo_conferir_view(request, pk):
     return redirect('calculo_detalhe', pk=calculo.pk)
 
 
-@login_required
+@refeitorio_requerido
 def calculo_gerar_view(request):
     """Gera um novo cálculo proporcional cruzando cardápio e frequência selecionados."""
     hoje = timezone.localdate()
@@ -748,7 +938,7 @@ def calculo_gerar_view(request):
     return render(request, 'calculos/gerar.html', context)
 
 
-@login_required
+@refeitorio_requerido
 def calculo_ajustar_item_view(request, pk):
     """Ajuste manual com justificativa obrigatória (RF09) de um item calculado."""
     item = get_object_or_404(ItemCalculo, pk=pk)

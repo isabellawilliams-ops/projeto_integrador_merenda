@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Meu Perfil — SPAE{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-8 col-lg-7">
+
+            <div class="card border-0 shadow-sm rounded-4 bg-white p-4 p-md-5">
+
+                <!-- Header -->
+                <div class="d-flex align-items-center justify-content-between mb-4 border-bottom pb-3">
+                    <div class="d-flex align-items-center gap-3">
+                        <a href="{% url 'home' %}" class="btn btn-outline-secondary btn-sm rounded-pill px-3 py-2" title="Voltar ao início">
+                            <i class="bi bi-arrow-left"></i>
+                        </a>
+                        <div>
+                            <h1 class="h4 fw-bold text-dark mb-1">
+                                <i class="bi bi-person-circle text-success me-2"></i>Meu Perfil
+                            </h1>
+                            <p class="text-muted small mb-0">Informações da sua conta de acesso no SPAE</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card de Identificação e Papel (RBAC) -->
+                <div class="p-3 bg-light rounded-4 border mb-4">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold shadow-sm"
+                             style="width: 54px; height: 54px; font-size: 1.4rem; background-color: {% if usuario.perfil == 'admin' %}#212529{% elif usuario.perfil == 'gestao' %}#0d6efd{% elif usuario.perfil == 'frequencia' %}#0dcaf0{% else %}#198754{% endif %};">
+                            {{ usuario.first_name|default:usuario.username|slice:":1"|upper }}
+                        </div>
+                        <div class="flex-grow-1">
+                            <span class="fs-5 fw-bold text-dark d-block">
+                                {{ usuario.nome_completo|default:usuario.username }}
+                            </span>
+                            <span class="text-muted small font-monospace d-inline-block me-2">@{{ usuario.username }}</span>
+                            <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-1">
+                                {{ usuario.get_perfil_display }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="row g-2 mt-3 pt-3 border-top small text-muted">
+                        <div class="col-6">
+                            <span>Status da Conta:</span>
+                            <strong class="text-success ms-1"><i class="bi bi-check-circle-fill me-1"></i>Ativa</strong>
+                        </div>
+                        <div class="col-6">
+                            <span>Membro desde:</span>
+                            <strong class="text-dark ms-1">{{ usuario.date_joined|date:"d/m/Y" }}</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <form method="post" novalidate>
+                    {% csrf_token %}
+
+                    <div class="mb-4">
+                        <label for="{{ form.nome_completo.id_for_label }}" class="form-label fw-semibold text-dark">
+                            {{ form.nome_completo.label }}
+                        </label>
+                        {{ form.nome_completo }}
+                        {% if form.nome_completo.errors %}
+                            <div class="text-danger small mt-1">{{ form.nome_completo.errors.0 }}</div>
+                        {% endif %}
+                        <small class="form-text text-muted">Seu nome como você gostaria que aparecesse nos relatórios e fichas de conferência.</small>
+                    </div>
+
+                    <!-- Bloco de Segurança e Senha -->
+                    <div class="p-3 bg-white rounded-4 border mb-4 d-flex align-items-center justify-content-between">
+                        <div>
+                            <strong class="text-dark d-block">
+                                <i class="bi bi-shield-lock-fill text-primary me-1"></i>Segurança e Senha
+                            </strong>
+                            <small class="text-muted">Recomendamos alterar sua senha periodicamente.</small>
+                        </div>
+                        <a href="{% url 'alterar_senha' %}" class="btn btn-outline-primary btn-sm rounded-pill px-3 py-2">
+                            <i class="bi bi-key me-1"></i>Alterar Senha
+                        </a>
+                    </div>
+
+                    <!-- Ações -->
+                    <div class="d-flex flex-column flex-sm-row gap-2 pt-3 border-top">
+                        <button type="submit" class="btn btn-primary rounded-pill px-5 py-3 flex-grow-1 shadow-sm">
+                            <i class="bi bi-check-circle-fill me-1"></i>Salvar Alterações
+                        </button>
+                        <a href="{% url 'home' %}" class="btn btn-outline-secondary rounded-pill px-4 py-3">
+                            Voltar ao Início
+                        </a>
+                    </div>
+
+                </form>
+
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

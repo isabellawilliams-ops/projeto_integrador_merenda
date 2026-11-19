@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Redefinir Senha de {{ usuario_alvo.username }} — SPAE{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-7 col-lg-6">
+
+            <div class="card border-0 shadow-sm rounded-4 bg-white p-4 p-md-5">
+
+                <!-- Header -->
+                <div class="d-flex align-items-center gap-3 mb-4 border-bottom pb-3">
+                    <a href="{% url 'usuario_lista' %}" class="btn btn-outline-secondary btn-sm rounded-pill px-3 py-2" title="Voltar para a lista">
+                        <i class="bi bi-arrow-left"></i>
+                    </a>
+                    <div>
+                        <h1 class="h4 fw-bold text-dark mb-1">
+                            <i class="bi bi-key-fill text-warning-emphasis me-2"></i>Redefinir Senha
+                        </h1>
+                        <p class="text-muted small mb-0">Atualização de credenciais de acesso</p>
+                    </div>
+                </div>
+
+                <!-- Info do Usuário Alvo -->
+                <div class="p-3 bg-light rounded-4 border mb-4">
+                    <span class="text-muted small text-uppercase fw-semibold d-block">Colaborador Selecionado:</span>
+                    <strong class="fs-5 text-dark d-block">{{ usuario_alvo.nome_completo|default:usuario_alvo.username }}</strong>
+                    <div class="d-flex align-items-center gap-2 mt-1">
+                        <span class="badge bg-secondary-subtle text-secondary font-monospace">@{{ usuario_alvo.username }}</span>
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle">{{ usuario_alvo.get_perfil_display }}</span>
+                    </div>
+                </div>
+
+                <form method="post" novalidate>
+                    {% csrf_token %}
+
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger rounded-4 mb-4">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-exclamation-triangle-fill fs-5"></i>
+                            <div>
+                                {% for error in form.non_field_errors %}
+                                    <p class="mb-0">{{ error }}</p>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div class="mb-3">
+                        <label for="{{ form.nova_senha.id_for_label }}" class="form-label fw-semibold text-dark">
+                            {{ form.nova_senha.label }} <span class="text-danger">*</span>
+                        </label>
+                        {{ form.nova_senha }}
+                        {% if form.nova_senha.errors %}
+                            <div class="text-danger small mt-1">{{ form.nova_senha.errors.0 }}</div>
+                        {% endif %}
+                        <small class="form-text text-muted">{{ form.nova_senha.help_text }}</small>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="{{ form.confirmar_nova_senha.id_for_label }}" class="form-label fw-semibold text-dark">
+                            {{ form.confirmar_nova_senha.label }} <span class="text-danger">*</span>
+                        </label>
+                        {{ form.confirmar_nova_senha }}
+                        {% if form.confirmar_nova_senha.errors %}
+                            <div class="text-danger small mt-1">{{ form.confirmar_nova_senha.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="d-flex flex-column flex-sm-row gap-2 pt-3 border-top">
+                        <button type="submit" class="btn btn-warning text-dark rounded-pill px-5 py-3 flex-grow-1 shadow-sm fw-bold">
+                            <i class="bi bi-check-circle-fill me-1"></i>Salvar Nova Senha
+                        </button>
+                        <a href="{% url 'usuario_lista' %}" class="btn btn-outline-secondary rounded-pill px-4 py-3">
+                            Cancelar
+                        </a>
+                    </div>
+
+                </form>
+
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

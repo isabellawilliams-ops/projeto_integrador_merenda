@@ -39,18 +39,57 @@
                     <a href="{% url 'cadastros_hub' %}" class="btn btn-sm btn-light rounded-pill px-3 py-1">
                         <i class="bi bi-gear me-1"></i>Cadastros
                     </a>
+                    {% if user.is_superuser or user.perfil == 'admin' %}
+                    <a href="{% url 'usuario_lista' %}" class="btn btn-sm btn-outline-dark rounded-pill px-3 py-1">
+                        <i class="bi bi-people-fill me-1"></i>Usuários
+                    </a>
+                    {% endif %}
                 </div>
             </div>
             <div class="d-flex align-items-center gap-2">
                 <span class="badge bg-success-subtle text-success spae-badge-perfil d-none d-sm-inline-block">
                     <i class="bi bi-person-badge me-1"></i>{{ user.get_perfil_display }}
                 </span>
-                <span class="fw-semibold text-truncate d-none d-md-inline" style="max-width: 160px;">
-                    {{ user.nome_completo|default:user.username }}
-                </span>
-                <a href="{% url 'logout' %}" class="btn btn-outline-danger btn-sm rounded-pill px-3 py-1" title="Encerrar sessão">
-                    <i class="bi bi-box-arrow-right me-1"></i>Sair
-                </a>
+
+                <div class="dropdown">
+                    <button class="btn btn-light btn-sm rounded-pill dropdown-toggle d-flex align-items-center gap-2 px-3 py-1 border" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-person-circle fs-5 text-secondary"></i>
+                        <span class="fw-semibold text-truncate d-none d-md-inline" style="max-width: 140px;">
+                            {{ user.nome_completo|default:user.username }}
+                        </span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-4 p-2 mt-2">
+                        <li class="px-3 py-2 border-bottom mb-1">
+                            <span class="fw-bold d-block text-dark">{{ user.nome_completo|default:user.username }}</span>
+                            <small class="text-muted font-monospace d-block">@{{ user.username }}</small>
+                            <span class="badge bg-light text-secondary border mt-1">{{ user.get_perfil_display }}</span>
+                        </li>
+                        <li>
+                            <a class="dropdown-item rounded-3 py-2" href="{% url 'meu_perfil' %}">
+                                <i class="bi bi-person-gear me-2 text-primary"></i>Meu Perfil
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item rounded-3 py-2" href="{% url 'alterar_senha' %}">
+                                <i class="bi bi-key me-2 text-warning-emphasis"></i>Alterar Senha
+                            </a>
+                        </li>
+                        {% if user.is_superuser or user.perfil == 'admin' %}
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <a class="dropdown-item rounded-3 py-2" href="{% url 'usuario_lista' %}">
+                                <i class="bi bi-people-fill me-2 text-dark"></i>Gestão de Usuários (RBAC)
+                            </a>
+                        </li>
+                        {% endif %}
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <a class="dropdown-item rounded-3 py-2 text-danger" href="{% url 'logout' %}">
+                                <i class="bi bi-box-arrow-right me-2"></i>Sair do Sistema
+                            </a>
+                        </li>
+                    </ul>
+                </div>
             </div>
         </div>
     </nav>

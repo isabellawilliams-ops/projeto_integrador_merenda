@@ -1,0 +1,228 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Gestão de Usuários e Perfis — SPAE{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+
+    <!-- Header e Ação Principal -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <a href="{% url 'cadastros_hub' %}" class="btn btn-outline-secondary btn-sm rounded-pill px-2 py-1" title="Voltar aos Cadastros">
+                    <i class="bi bi-arrow-left"></i>
+                </a>
+                <h1 class="h4 fw-bold mb-0 text-dark">
+                    <i class="bi bi-people-fill text-primary me-2"></i>Gestão de Usuários e Permissões (RBAC)
+                </h1>
+            </div>
+            <p class="text-muted small mb-0">
+                Controle centralizado de acessos, papéis de trabalho e senhas dos colaboradores da alimentação escolar
+            </p>
+        </div>
+
+        <a href="{% url 'usuario_criar' %}" class="btn btn-primary rounded-pill px-4 py-2 shadow-sm d-inline-flex align-items-center gap-2">
+            <i class="bi bi-person-plus-fill fs-5"></i>
+            <span>Novo Usuário</span>
+        </a>
+    </div>
+
+    <!-- Cards de Indicadores Rápidos -->
+    <div class="row g-3 mb-4">
+        <div class="col-12 col-sm-4">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="p-3 bg-primary-subtle text-primary rounded-4 fs-4">
+                        <i class="bi bi-person-badge"></i>
+                    </div>
+                    <div>
+                        <span class="text-muted small d-block">Total de Usuários</span>
+                        <span class="h4 fw-bold mb-0 text-dark">{{ total_usuarios }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-sm-4">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="p-3 bg-success-subtle text-success rounded-4 fs-4">
+                        <i class="bi bi-check-circle"></i>
+                    </div>
+                    <div>
+                        <span class="text-muted small d-block">Contas Ativas</span>
+                        <span class="h4 fw-bold mb-0 text-success">{{ total_ativos }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-sm-4">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="p-3 bg-secondary-subtle text-secondary rounded-4 fs-4">
+                        <i class="bi bi-person-x"></i>
+                    </div>
+                    <div>
+                        <span class="text-muted small d-block">Inativas</span>
+                        <span class="h4 fw-bold mb-0 text-secondary">{{ total_inativos }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Barra de Filtros e Busca -->
+    <div class="card border-0 shadow-sm rounded-4 bg-white p-3 mb-4">
+        <form method="get" class="row g-2 align-items-center">
+            <div class="col-12 col-md-5">
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0 rounded-start-pill ps-3">
+                        <i class="bi bi-search text-muted"></i>
+                    </span>
+                    <input type="text" name="q" value="{{ q }}" class="form-control border-start-0 rounded-end-pill" placeholder="Buscar por nome ou username...">
+                </div>
+            </div>
+
+            <div class="col-6 col-md-3">
+                <select name="perfil" class="form-select rounded-pill">
+                    <option value="">Todos os Perfis (RBAC)</option>
+                    {% for valor, rotulo in perfis_choices %}
+                        <option value="{{ valor }}" {% if perfil_filtro == valor %}selected{% endif %}>{{ rotulo }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-6 col-md-2">
+                <select name="status" class="form-select rounded-pill">
+                    <option value="">Status (Todos)</option>
+                    <option value="ativo" {% if status_filtro == 'ativo' %}selected{% endif %}>Ativos</option>
+                    <option value="inativo" {% if status_filtro == 'inativo' %}selected{% endif %}>Inativos</option>
+                </select>
+            </div>
+
+            <div class="col-12 col-md-2 d-flex gap-2">
+                <button type="submit" class="btn btn-outline-primary rounded-pill w-100">
+                    <i class="bi bi-funnel me-1"></i>Filtrar
+                </button>
+                {% if q or perfil_filtro or status_filtro %}
+                    <a href="{% url 'usuario_lista' %}" class="btn btn-outline-secondary rounded-pill" title="Limpar Filtros">
+                        <i class="bi bi-x"></i>
+                    </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+
+    <!-- Tabela de Usuários -->
+    <div class="card border-0 shadow-sm rounded-4 bg-white overflow-hidden">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">Colaborador / Identificação</th>
+                        <th>Perfil de Acesso (RBAC)</th>
+                        <th>Situação</th>
+                        <th>Último Acesso</th>
+                        <th class="text-end pe-4">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for u in usuarios %}
+                    <tr class="{% if not u.ativo %}opacity-75 bg-light{% endif %}">
+                        <td class="ps-4 py-3">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold shadow-sm"
+                                     style="width: 42px; height: 42px; background-color: {% if u.perfil == 'admin' %}#212529{% elif u.perfil == 'gestao' %}#0d6efd{% elif u.perfil == 'frequencia' %}#0dcaf0{% else %}#198754{% endif %};">
+                                    {{ u.first_name|default:u.username|slice:":1"|upper }}
+                                </div>
+                                <div>
+                                    <strong class="text-dark d-block">
+                                        {{ u.nome_completo|default:u.get_full_name|default:u.username }}
+                                    </strong>
+                                    <small class="text-muted font-monospace">@{{ u.username }}</small>
+                                    {% if u.is_superuser %}
+                                        <span class="badge bg-dark-subtle text-dark border ms-1">Superuser</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            {% if u.perfil == 'refeitorio' %}
+                                <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-1">
+                                    <i class="bi bi-egg-fried me-1"></i>Refeitório (Merendeira)
+                                </span>
+                            {% elif u.perfil == 'frequencia' %}
+                                <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle rounded-pill px-3 py-1">
+                                    <i class="bi bi-people me-1"></i>Frequência (Secretaria)
+                                </span>
+                            {% elif u.perfil == 'gestao' %}
+                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-1">
+                                    <i class="bi bi-clipboard2-check me-1"></i>Gestão / Nutricionista
+                                </span>
+                            {% elif u.perfil == 'admin' %}
+                                <span class="badge bg-dark text-white rounded-pill px-3 py-1">
+                                    <i class="bi bi-shield-lock me-1"></i>Administrador
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if u.ativo %}
+                                <span class="badge bg-success text-white rounded-pill px-2 py-1">
+                                    <i class="bi bi-check-circle me-1"></i>Ativo
+                                </span>
+                            {% else %}
+                                <span class="badge bg-secondary text-white rounded-pill px-2 py-1">
+                                    <i class="bi bi-x-circle me-1"></i>Inativo
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <small class="text-muted">
+                                {% if u.last_login %}
+                                    {{ u.last_login|date:"d/m/Y H:i" }}
+                                {% else %}
+                                    <span class="fst-italic text-secondary">Nunca acessou</span>
+                                {% endif %}
+                            </small>
+                        </td>
+                        <td class="text-end pe-4">
+                            <div class="d-inline-flex gap-1 align-items-center">
+                                <a href="{% url 'usuario_editar' u.id %}" class="btn btn-outline-primary btn-sm rounded-circle p-2" title="Editar Usuário" style="width: 36px; height: 36px;">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <a href="{% url 'usuario_redefinir_senha' u.id %}" class="btn btn-outline-warning text-dark btn-sm rounded-circle p-2" title="Redefinir Senha" style="width: 36px; height: 36px;">
+                                    <i class="bi bi-key"></i>
+                                </a>
+
+                                {% if u != request.user %}
+                                <form method="post" action="{% url 'usuario_alternar_status' u.id %}" class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn {% if u.ativo %}btn-outline-danger{% else %}btn-outline-success{% endif %} btn-sm rounded-circle p-2"
+                                            title="{% if u.ativo %}Desativar conta{% else %}Ativar conta{% endif %}"
+                                            style="width: 36px; height: 36px;"
+                                            onclick="return confirm('Deseja realmente {% if u.ativo %}desativar{% else %}ativar{% endif %} o acesso do usuário {{ u.username }}?');">
+                                        <i class="bi {% if u.ativo %}bi-person-slash{% else %}bi-person-check{% endif %}"></i>
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center py-5 text-muted">
+                            <i class="bi bi-people fs-1 text-secondary opacity-50 mb-2"></i>
+                            <p class="mb-2 fw-semibold">Nenhum usuário localizado com os critérios informados.</p>
+                            <a href="{% url 'usuario_criar' %}" class="btn btn-primary btn-sm rounded-pill px-4">
+                                Cadastrar Novo Usuário
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

@@ -733,5 +733,193 @@ class CalculosModuloViewsTest(TestCase):
         self.assertIn('Aumento de demanda confirmado.', conteudo_texto)
 
 
+class AutenticacaoAutorizacaoModuloTest(TestCase):
+    """Testes completos do Módulo de Autenticação e Autorização (RF01 - RBAC)."""
+
+    def setUp(self):
+        # Usuários com cada um dos 4 perfis do SPAE
+        self.user_refeitorio = Usuario.objects.create_user(
+            username='maria_merenda',
+            password='senha_refeitorio_123',
+            nome_completo='Maria das Graças',
+            perfil=PerfilUsuario.REFEITORIO,
+            ativo=True
+        )
+        self.user_frequencia = Usuario.objects.create_user(
+            username='pedro_secretaria',
+            password='senha_frequencia_123',
+            nome_completo='Pedro Álvares',
+            perfil=PerfilUsuario.FREQUENCIA,
+            ativo=True
+        )
+        self.user_gestao = Usuario.objects.create_user(
+            username='ana_nutri',
+            password='senha_gestao_123',
+            nome_completo='Ana Paula Nutricionista',
+            perfil=PerfilUsuario.GESTAO,
+            ativo=True
+        )
+        self.user_admin = Usuario.objects.create_user(
+            username='carlos_admin',
+            password='senha_admin_123',
+            nome_completo='Carlos Administrador',
+            perfil=PerfilUsuario.ADMIN,
+            ativo=True
+        )
+        self.user_inativo = Usuario.objects.create_user(
+            username='joao_inativo',
+            password='senha_inativo_123',
+            nome_completo='João Desativado',
+            perfil=PerfilUsuario.REFEITORIO,
+            ativo=False
+        )
+
+    def test_login_sucesso_com_credenciais_validas(self):
+        response = self.client.post('/login/', {
+            'username': 'maria_merenda',
+            'password': 'senha_refeitorio_123',
+        }, follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context['user'].is_authenticated)
+        self.assertEqual(response.context['user'].username, 'maria_merenda')
+        self.assertContains(response, 'Bem-vindo(a), Maria das Graças!')
+
+    def test_login_falha_com_senha_incorreta(self):
+        response = self.client.post('/login/', {
+            'username': 'maria_merenda',
+            'password': 'senha_errada_xyz',
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.context['user'].is_authenticated)
+        self.assertContains(response, 'Usuário ou senha incorretos')
+
+    def test_login_bloqueado_para_usuario_desativado(self):
+        response = self.client.post('/login/', {
+            'username': 'joao_inativo',
+            'password': 'senha_inativo_123',
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.context['user'].is_authenticated)
+        self.assertContains(response, 'Esta conta de usuário está desativada')
+
+    def test_logout_encerra_sessao(self):
+        self.client.login(username='maria_merenda', password='senha_refeitorio_123')
+        response = self.client.get('/logout/', follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.context['user'].is_authenticated)
+        self.assertContains(response, 'Sessão encerrada com sucesso')
+
+    def test_meu_perfil_atualizacao_nome(self):
+        self.client.login(username='maria_merenda', password='senha_refeitorio_123')
+        response = self.client.get('/meu-perfil/')
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'usuarios/meu_perfil.html')
+        self.assertContains(response, 'Maria das Graças')
+
+        # Atualiza o nome
+        response_post = self.client.post('/meu-perfil/', {
+            'nome_completo': 'Maria das Graças Silva',
+        }, follow=True)
+        self.assertEqual(response_post.status_code, 200)
+        self.user_refeitorio.refresh_from_db()
+        self.assertEqual(self.user_refeitorio.nome_completo, 'Maria das Graças Silva')
+        self.assertContains(response_post, 'Seus dados de perfil foram atualizados com sucesso')
+
+    def test_alterar_propria_senha(self):
+        self.client.login(username='maria_merenda', password='senha_refeitorio_123')
+        response = self.client.post('/alterar-senha/', {
+            'old_password': 'senha_refeitorio_123',
+            'new_password1': 'nova_senha_super_segura_456',
+            'new_password2': 'nova_senha_super_segura_456',
+        }, follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Sua senha foi alterada com sucesso')
+
+        # Confirma que a nova senha funciona
+        self.client.logout()
+        login_novo = self.client.login(username='maria_merenda', password='nova_senha_super_segura_456')
+        self.assertTrue(login_novo)
+
+    def test_rbac_admin_pode_gerenciar_usuarios(self):
+        self.client.login(username='carlos_admin', password='senha_admin_123')
+
+        # 1. Acessa lista
+        response = self.client.get('/usuarios/')
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'usuarios/lista.html')
+        self.assertContains(response, 'Gestão de Usuários e Permissões (RBAC)')
+
+        # 2. Cria novo usuário
+        response_create = self.client.post('/usuarios/novo/', {
+            'username': 'novamerendeira',
+            'nome_completo': 'Dona Florinda',
+            'perfil': PerfilUsuario.REFEITORIO,
+            'password': 'senha_inicial_123',
+            'password_confirm': 'senha_inicial_123',
+            'ativo': True,
+        }, follow=True)
+        self.assertEqual(response_create.status_code, 200)
+        self.assertTrue(Usuario.objects.filter(username='novamerendeira').exists())
+        novo_u = Usuario.objects.get(username='novamerendeira')
+        self.assertEqual(novo_u.perfil, PerfilUsuario.REFEITORIO)
+        self.assertTrue(novo_u.ativo)
+
+        # 3. Edita usuário
+        response_edit = self.client.post(f'/usuarios/{novo_u.id}/editar/', {
+            'nome_completo': 'Dona Florinda Corrigida',
+            'perfil': PerfilUsuario.GESTAO,
+            'ativo': True,
+        }, follow=True)
+        self.assertEqual(response_edit.status_code, 200)
+        novo_u.refresh_from_db()
+        self.assertEqual(novo_u.nome_completo, 'Dona Florinda Corrigida')
+        self.assertEqual(novo_u.perfil, PerfilUsuario.GESTAO)
+
+        # 4. Redefine senha do usuário
+        response_pwd = self.client.post(f'/usuarios/{novo_u.id}/redefinir-senha/', {
+            'nova_senha': 'senha_redefinida_789',
+            'confirmar_nova_senha': 'senha_redefinida_789',
+        }, follow=True)
+        self.assertEqual(response_pwd.status_code, 200)
+        self.assertContains(response_pwd, 'redefinida com sucesso')
+
+        # 5. Alterna status (desativa)
+        response_toggle = self.client.post(f'/usuarios/{novo_u.id}/alternar-status/', follow=True)
+        self.assertEqual(response_toggle.status_code, 200)
+        novo_u.refresh_from_db()
+        self.assertFalse(novo_u.ativo)
+
+    def test_rbac_refeitorio_bloqueado_em_gestao_usuarios(self):
+        # Usuário do refeitório NÃO pode acessar a área de administração de usuários
+        self.client.login(username='maria_merenda', password='senha_refeitorio_123')
+        response = self.client.get('/usuarios/', follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Acesso não autorizado')
+        self.assertNotEqual(response.resolver_match.url_name, 'usuario_lista')
+
+    def test_rbac_frequencia_bloqueada_em_cadastros_administrativos(self):
+        # Secretaria/Frequência NÃO pode cadastrar ingredientes
+        self.client.login(username='pedro_secretaria', password='senha_frequencia_123')
+        response = self.client.get('/cadastros/ingredientes/novo/', follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Permissão negada')
+
+    def test_rbac_refeitorio_bloqueado_em_lancar_frequencia(self):
+        # Refeitório NÃO pode lançar frequência
+        self.client.login(username='maria_merenda', password='senha_refeitorio_123')
+        response = self.client.get('/frequencia/registrar/', follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Acesso não autorizado')
+
+    def test_admin_bloqueado_de_desativar_a_si_proprio(self):
+        self.client.login(username='carlos_admin', password='senha_admin_123')
+        response = self.client.post(f'/usuarios/{self.user_admin.id}/alternar-status/', follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.user_admin.refresh_from_db()
+        self.assertTrue(self.user_admin.ativo)
+        self.assertContains(response, 'você não pode desativar sua própria conta')
+
+
+
 
 

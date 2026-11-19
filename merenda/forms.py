@@ -1,6 +1,8 @@
 from decimal import Decimal
 from django import forms
-from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth import authenticate
+from django.contrib.auth.forms import AuthenticationForm, PasswordChangeForm
+from django.core.exceptions import ValidationError
 
 from .models import (
     BaseCalculo,
@@ -9,9 +11,11 @@ from .models import (
     Ingrediente,
     ItemCalculo,
     ItemReceita,
+    PerfilUsuario,
     ReceitaFichaTecnica,
     TipoRefeicao,
     UnidadeMedida,
+    Usuario,
 )
 
 
@@ -49,6 +53,28 @@ class LoginForm(AuthenticationForm):
             "Esta conta de usuário está desativada. Entre em contato com a gestão escolar ou coordenação."
         ),
     }
+
+    def clean(self):
+        username = self.cleaned_data.get("username")
+        password = self.cleaned_data.get("password")
+
+        if username is not None and password:
+            self.user_cache = authenticate(
+                self.request, username=username, password=password
+            )
+            if self.user_cache is None:
+                # Se falhar a autenticação, verifica se o usuário existe com credenciais corretas mas inativo
+                try:
+                    user_existente = Usuario.objects.get(username=username)
+                    if user_existente.check_password(password) and (not user_existente.ativo or not user_existente.is_active):
+                        self.confirm_login_allowed(user_existente)
+                except Usuario.DoesNotExist:
+                    pass
+                raise self.get_invalid_login_error()
+            else:
+                self.confirm_login_allowed(self.user_cache)
+
+        return self.cleaned_data
 
 
 class FrequenciaDiariaForm(forms.ModelForm):
@@ -291,3 +317,183 @@ class ItemReceitaForm(forms.ModelForm):
             'unidade_medida': 'Unidade de Medida',
             'base_calculo': 'Base de Cálculo',
         }
+
+
+# ========================================================
+# FORMULÁRIOS DE GESTÃO DE USUÁRIOS E PERFIS (RF01 - RBAC)
+# ========================================================
+
+class UsuarioCriacaoForm(forms.ModelForm):
+    """Criação de novos usuários do SPAE com perfil e senha inicial pelo Administrador."""
+    password = forms.CharField(
+        label="Senha Inicial",
+        widget=forms.PasswordInput(
+            attrs={
+                'class': 'form-control form-control-lg',
+                'placeholder': 'Mínimo de 6 caracteres...',
+                'autocomplete': 'new-password',
+            }
+        ),
+        min_length=6,
+        help_text="A senha deve ter pelo menos 6 caracteres."
+    )
+    password_confirm = forms.CharField(
+        label="Confirmar Senha",
+        widget=forms.PasswordInput(
+            attrs={
+                'class': 'form-control form-control-lg',
+                'placeholder': 'Repita a senha inicial...',
+                'autocomplete': 'new-password',
+            }
+        ),
+        help_text="Repita exatamente a mesma senha digitada acima."
+    )
+
+    class Meta:
+        model = Usuario
+        fields = ['username', 'nome_completo', 'perfil', 'ativo']
+        widgets = {
+            'username': forms.TextInput(
+                attrs={
+                    'class': 'form-control form-control-lg',
+                    'placeholder': 'Ex: maria.refeitorio, lucas.secretaria...',
+                    'autocomplete': 'username',
+                }
+            ),
+            'nome_completo': forms.TextInput(
+                attrs={
+                    'class': 'form-control form-control-lg',
+                    'placeholder': 'Nome completo do profissional...',
+                }
+            ),
+            'perfil': forms.Select(
+                attrs={
+                    'class': 'form-select form-select-lg',
+                }
+            ),
+            'ativo': forms.CheckboxInput(
+                attrs={
+                    'class': 'form-check-input fs-5',
+                    'role': 'switch',
+                }
+            ),
+        }
+        labels = {
+            'username': 'Login de Acesso (Username)',
+            'nome_completo': 'Nome Completo',
+            'perfil': 'Perfil de Acesso (Papel RBAC)',
+            'ativo': 'Conta Ativa para Acesso',
+        }
+        help_texts = {
+            'username': 'Identificador único sem espaços ou caracteres especiais.',
+            'perfil': 'Define as telas e ações autorizadas (Refeitório, Frequência, Gestão ou Administrador).',
+        }
+
+    def clean(self):
+        cleaned_data = super().clean()
+        pwd = cleaned_data.get('password')
+        pwd_confirm = cleaned_data.get('password_confirm')
+        if pwd and pwd_confirm and pwd != pwd_confirm:
+            self.add_error('password_confirm', "As senhas informadas não conferem. Digite novamente.")
+        return cleaned_data
+
+    def save(self, commit=True):
+        usuario = super().save(commit=False)
+        usuario.set_password(self.cleaned_data['password'])
+        if commit:
+            usuario.save()
+        return usuario
+
+
+class UsuarioEdicaoForm(forms.ModelForm):
+    """Edição dos dados cadastrais, perfil de acesso e status de usuário pelo Administrador."""
+    class Meta:
+        model = Usuario
+        fields = ['nome_completo', 'perfil', 'ativo']
+        widgets = {
+            'nome_completo': forms.TextInput(
+                attrs={
+                    'class': 'form-control form-control-lg',
+                    'placeholder': 'Nome completo do profissional...',
+                }
+            ),
+            'perfil': forms.Select(
+                attrs={
+                    'class': 'form-select form-select-lg',
+                }
+            ),
+            'ativo': forms.CheckboxInput(
+                attrs={
+                    'class': 'form-check-input fs-5',
+                    'role': 'switch',
+                }
+            ),
+        }
+        labels = {
+            'nome_completo': 'Nome Completo',
+            'perfil': 'Perfil de Acesso (Papel RBAC)',
+            'ativo': 'Conta Ativa para Acesso',
+        }
+
+
+class UsuarioRedefinirSenhaForm(forms.Form):
+    """Redefinição direta de senha de usuário pelo Administrador."""
+    nova_senha = forms.CharField(
+        label="Nova Senha",
+        widget=forms.PasswordInput(
+            attrs={
+                'class': 'form-control form-control-lg',
+                'placeholder': 'Digite a nova senha (mínimo 6 caracteres)...',
+                'autocomplete': 'new-password',
+            }
+        ),
+        min_length=6,
+        help_text="Defina uma nova senha com no mínimo 6 caracteres para o usuário."
+    )
+    confirmar_nova_senha = forms.CharField(
+        label="Confirmar Nova Senha",
+        widget=forms.PasswordInput(
+            attrs={
+                'class': 'form-control form-control-lg',
+                'placeholder': 'Repita a nova senha...',
+                'autocomplete': 'new-password',
+            }
+        )
+    )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        s1 = cleaned_data.get('nova_senha')
+        s2 = cleaned_data.get('confirmar_nova_senha')
+        if s1 and s2 and s1 != s2:
+            self.add_error('confirmar_nova_senha', "As senhas não conferem. Por favor, digite novamente.")
+        return cleaned_data
+
+
+class MeuPerfilForm(forms.ModelForm):
+    """Permite ao próprio usuário logado atualizar suas informações básicas de identificação."""
+    class Meta:
+        model = Usuario
+        fields = ['nome_completo']
+        widgets = {
+            'nome_completo': forms.TextInput(
+                attrs={
+                    'class': 'form-control form-control-lg',
+                    'placeholder': 'Seu nome completo...',
+                }
+            ),
+        }
+        labels = {
+            'nome_completo': 'Seu Nome Completo',
+        }
+
+
+class AlterarPropriaSenhaForm(PasswordChangeForm):
+    """Formulário para o próprio usuário alterar sua senha com estilização Bootstrap 5."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field_name in self.fields:
+            self.fields[field_name].widget.attrs.update({
+                'class': 'form-control form-control-lg',
+            })
+
