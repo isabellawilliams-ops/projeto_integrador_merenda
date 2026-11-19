@@ -1,12 +1,15 @@
+import csv
 from decimal import Decimal
 from django.contrib import messages
 from django.contrib.auth import logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView
 from django.db import models
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
 from django.utils import timezone
+from django.utils.text import slugify
 
 from .forms import (
     CalculoGerarForm,
@@ -762,3 +765,104 @@ def calculo_ajustar_item_view(request, pk):
             for erro in form.errors.values():
                 messages.error(request, erro)
     return redirect('calculo_detalhe', pk=item.calculo_id)
+
+
+# ========================================================
+# EXPORTAÇÃO E IMPRESSÃO DO RESUMO DIÁRIO (RF11)
+# ========================================================
+
+@login_required
+def calculo_imprimir_view(request, pk):
+    """
+    Exibe a Ficha de Produção e Controle Diário formatada para impressão (A4/prancheta).
+    Inclui cabeçalho institucional, dados de presença, checklist de ingredientes [ ],
+    instruções das preparações e campo para assinaturas das merendeiras e nutricionista.
+    """
+    calculo = get_object_or_404(
+        CalculoDiario.objects.select_related('cardapio', 'frequencia', 'usuario_responsavel'),
+        pk=pk
+    )
+    itens = calculo.itens.select_related('ingrediente').order_by('ingrediente__nome')
+    receitas = calculo.cardapio.receitas.prefetch_related('itens__ingrediente').all()
+
+    context = {
+        'calculo': calculo,
+        'itens': itens,
+        'receitas': receitas,
+        'data_emissao': timezone.now(),
+        'emitido_por': request.user,
+    }
+    return render(request, 'calculos/imprimir.html', context)
+
+
+@login_required
+def calculo_exportar_csv_view(request, pk):
+    """
+    Exporta o resumo diário de cálculo de ingredientes em formato CSV tabular.
+    Utiliza codificação UTF-8 com BOM (\ufeff) e separador ponto-e-vírgula (;)
+    garantindo compatibilidade nativa com Microsoft Excel e LibreOffice Calc em português.
+    """
+    calculo = get_object_or_404(
+        CalculoDiario.objects.select_related('cardapio', 'frequencia', 'usuario_responsavel'),
+        pk=pk
+    )
+    itens = calculo.itens.select_related('ingrediente').order_by('ingrediente__nome')
+
+    data_formatada = calculo.frequencia.data_refeicao.strftime('%d/%m/%Y')
+    data_arquivo = calculo.frequencia.data_refeicao.strftime('%Y-%m-%d')
+    turno_slug = slugify(calculo.frequencia.get_refeicao_turno_display())
+    filename = f"SPAE_Resumo_Diario_{data_arquivo}_{turno_slug}.csv"
+
+    response = HttpResponse(content_type='text/csv; charset=utf-8')
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+
+    # Adiciona o BOM do UTF-8 para o Excel reconhecer automaticamente a acentuação
+    response.write('\ufeff')
+
+    writer = csv.writer(response, delimiter=';')
+
+    # Cabeçalho Tabular
+    writer.writerow([
+        'Data da Refeição',
+        'Turno / Refeição',
+        'Cardápio',
+        'Estudantes Presentes',
+        'Ingrediente',
+        'Quantidade Calculada',
+        'Unidade de Medida',
+        'Quantidade Ajustada',
+        'Justificativa do Ajuste',
+        'Status da Conferência',
+        'Responsável pelo Registro',
+        'Data/Hora de Geração',
+    ])
+
+    status_conferencia = 'Conferido' if calculo.conferido else 'Pendente'
+    responsavel_nome = (
+        calculo.usuario_responsavel.nome_completo
+        if calculo.usuario_responsavel and calculo.usuario_responsavel.nome_completo
+        else (calculo.usuario_responsavel.username if calculo.usuario_responsavel else 'Não informado')
+    )
+    gerado_em_str = calculo.gerado_em.strftime('%d/%m/%Y %H:%M:%S') if calculo.gerado_em else ''
+
+    for item in itens:
+        # Formata os valores decimais com vírgula para convenção brasileira de planilhas
+        qtd_calculada_str = str(item.quantidade_calculada).replace('.', ',')
+        qtd_ajustada_str = str(item.quantidade_ajustada).replace('.', ',') if item.quantidade_ajustada is not None else ''
+
+        writer.writerow([
+            data_formatada,
+            calculo.frequencia.get_refeicao_turno_display(),
+            calculo.cardapio.nome,
+            calculo.frequencia.total_estudantes_presentes,
+            item.ingrediente.nome,
+            qtd_calculada_str,
+            item.get_unidade_medida_display(),
+            qtd_ajustada_str,
+            item.justificativa_ajuste or '',
+            status_conferencia,
+            responsavel_nome,
+            gerado_em_str,
+        ])
+
+    return response

@@ -43,4 +43,8 @@ urlpatterns = [
     path('calculo/historico/', views.calculo_lista_view, name='calculo_lista'),
     path('calculo/<int:pk>/conferir/', views.calculo_conferir_view, name='calculo_conferir'),
     path('calculo/itens/<int:pk>/ajustar/', views.calculo_ajustar_item_view, name='calculo_ajustar_item'),
+
+    # Exportação e Impressão do Resumo Diário (RF11)
+    path('calculo/<int:pk>/imprimir/', views.calculo_imprimir_view, name='calculo_imprimir'),
+    path('calculo/<int:pk>/exportar-csv/', views.calculo_exportar_csv_view, name='calculo_exportar_csv'),
 ]

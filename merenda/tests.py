@@ -681,5 +681,57 @@ class CalculosModuloViewsTest(TestCase):
         self.assertEqual(item.quantidade_ajustada, Decimal('9.5000'))
         self.assertContains(response, 'Ajuste registrado')
 
+    def test_calculo_imprimir_view(self):
+        response = self.client.get(f'/calculo/{self.calculo.id}/imprimir/')
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'calculos/imprimir.html')
+        self.assertContains(response, 'SPAE — Alimentação Escolar')
+        self.assertContains(response, 'GUIA DE PRODUÇÃO E CONFERÊNCIA DIÁRIA DE INGREDIENTES')
+        self.assertContains(response, 'Cardápio Teste Almoço')
+        self.assertContains(response, 'Macarrão Parafuso')
+        self.assertContains(response, '8,0000')
+        self.assertContains(response, '100')
+        self.assertContains(response, 'Responsável pelo Preparo (Merendeira)')
+        self.assertContains(response, 'Nutricionista / Gestão Escolar')
+
+    def test_calculo_imprimir_view_redireciona_anonimo(self):
+        self.client.logout()
+        response = self.client.get(f'/calculo/{self.calculo.id}/imprimir/')
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('/login/', response.url)
+
+    def test_calculo_exportar_csv_view(self):
+        response = self.client.get(f'/calculo/{self.calculo.id}/exportar-csv/')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Content-Type'], 'text/csv; charset=utf-8')
+        self.assertIn('attachment; filename="SPAE_Resumo_Diario_', response['Content-Disposition'])
+
+        conteudo_bytes = response.content
+        # Verifica se o arquivo inicia com o BOM do UTF-8 (\xef\xbb\xbf)
+        self.assertTrue(conteudo_bytes.startswith(b'\xef\xbb\xbf'))
+
+        conteudo_texto = conteudo_bytes.decode('utf-8-sig')
+        # Verifica o cabeçalho tabular com separador ponto-e-vírgula
+        self.assertIn('Data da Refeição;Turno / Refeição;Cardápio;Estudantes Presentes;Ingrediente;Quantidade Calculada', conteudo_texto)
+        # Verifica a linha de dados com valores formatados
+        self.assertIn('Macarrão Parafuso', conteudo_texto)
+        self.assertIn('8,0000', conteudo_texto)
+        self.assertIn('100', conteudo_texto)
+        self.assertIn('Cardápio Teste Almoço', conteudo_texto)
+
+    def test_calculo_exportar_csv_com_ajuste_justificado(self):
+        item = self.calculo.itens.first()
+        item.quantidade_ajustada = Decimal('10.0000')
+        item.justificativa_ajuste = 'Aumento de demanda confirmado.'
+        item.save()
+
+        response = self.client.get(f'/calculo/{self.calculo.id}/exportar-csv/')
+        self.assertEqual(response.status_code, 200)
+
+        conteudo_texto = response.content.decode('utf-8-sig')
+        self.assertIn('10,0000', conteudo_texto)
+        self.assertIn('Aumento de demanda confirmado.', conteudo_texto)
+
+
 
 

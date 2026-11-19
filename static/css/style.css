@@ -188,3 +188,54 @@ input, select, textarea, button, .btn {
     color: var(--spae-muted);
     text-align: center;
 }
+
+/* ========================================================
+   ESTILOS GLOBAIS DE IMPRESSÃO (RF11)
+   ======================================================== */
+@media print {
+    nav,
+    .navbar,
+    .spae-navbar,
+    .footer-spae,
+    .d-print-none,
+    .btn,
+    .alert {
+        display: none !important;
+    }
+
+    body {
+        background-color: #ffffff !important;
+        color: #000000 !important;
+        font-size: 11pt;
+        margin: 0;
+        padding: 0;
+    }
+
+    .container, .container-fluid {
+        max-width: 100% !important;
+        width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    .card {
+        border: 1px solid #333333 !important;
+        box-shadow: none !important;
+        border-radius: 4px !important;
+    }
+
+    .table {
+        border-color: #000000 !important;
+    }
+
+    .table th, .table td {
+        border-color: #333333 !important;
+        padding: 6px 8px !important;
+        color: #000000 !important;
+    }
+
+    .print-avoid-break {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+    }
+}

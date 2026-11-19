@@ -1,0 +1,328 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Imprimir Ficha de Merenda — SPAE #{{ calculo.id }}{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Estilos visuais da folha de impressão e prancheta */
+.print-sheet {
+    background-color: #ffffff;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 2.5rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    color: #1a1a1a;
+}
+
+.check-box-print {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 2px solid #333333;
+    border-radius: 4px;
+    vertical-align: middle;
+}
+
+.signature-line {
+    border-top: 1.5px solid #222222;
+    margin-top: 50px;
+    padding-top: 6px;
+    text-align: center;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+@media print {
+    @page {
+        size: A4 portrait;
+        margin: 12mm 10mm 12mm 10mm;
+    }
+
+    body {
+        background-color: #ffffff !important;
+        font-size: 11pt !important;
+        color: #000000 !important;
+    }
+
+    .print-sheet {
+        box-shadow: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        max-width: 100% !important;
+    }
+
+    .table {
+        border-color: #000000 !important;
+    }
+
+    .table th, .table td {
+        border-color: #333333 !important;
+        padding: 6px 6px !important;
+        color: #000000 !important;
+        font-size: 10.5pt !important;
+    }
+
+    .table-dark-header th {
+        background-color: #e9ecef !important;
+        color: #000000 !important;
+        border-bottom: 2px solid #000000 !important;
+    }
+
+    .badge {
+        border: 1px solid #333333 !important;
+        color: #000000 !important;
+        background-color: transparent !important;
+    }
+
+    .print-avoid-break {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+
+    <!-- BARRA DE CONTROLE NA TELA (NÃO IMPRESSA) -->
+    <div class="d-print-none mb-4">
+        <div class="card border-0 shadow-sm rounded-4 bg-white p-3">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+                <div class="d-flex align-items-center gap-3">
+                    <a href="{% url 'calculo_detalhe' calculo.id %}" class="btn btn-outline-secondary rounded-pill px-3 py-2">
+                        <i class="bi bi-arrow-left me-1"></i>Voltar ao Detalhe
+                    </a>
+                    <div>
+                        <h1 class="h5 fw-bold mb-0 text-dark">
+                            <i class="bi bi-printer-fill text-primary me-2"></i>Ficha de Cozinha / Prancheta Diária
+                        </h1>
+                        <small class="text-muted">Visualização formatada para prancheta das merendeiras e arquivamento físico (A4)</small>
+                    </div>
+                </div>
+
+                <div class="d-flex flex-wrap gap-2">
+                    <a href="{% url 'calculo_exportar_csv' calculo.id %}" class="btn btn-outline-success rounded-pill px-3 py-2">
+                        <i class="bi bi-file-earmark-spreadsheet me-1"></i>Baixar CSV (Excel)
+                    </a>
+                    <button type="button" class="btn btn-primary rounded-pill px-4 py-2 shadow-sm" onclick="window.print()">
+                        <i class="bi bi-printer me-1"></i>Imprimir Ficha Agora
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FOLHA A4 DE IMPRESSÃO -->
+    <div class="print-sheet">
+
+        <!-- CABEÇALHO INSTITUCIONAL -->
+        <div class="border-bottom border-2 border-dark pb-3 mb-4">
+            <div class="row align-items-center">
+                <div class="col-8">
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <i class="bi bi-egg-fried fs-3 text-success d-print-none"></i>
+                        <span class="fs-4 fw-bold text-uppercase letter-spacing-1">SPAE — Alimentação Escolar</span>
+                    </div>
+                    <h2 class="h6 fw-semibold text-secondary mb-1">
+                        GUIA DE PRODUÇÃO E CONFERÊNCIA DIÁRIA DE INGREDIENTES
+                    </h2>
+                    <small class="text-muted d-block">
+                        Escola Estadual de Tempo Integral &bull; Programa de Alimentação Escolar Sustentável
+                    </small>
+                </div>
+                <div class="col-4 text-end">
+                    <span class="badge bg-light text-dark border border-secondary px-3 py-2 d-inline-block mb-1">
+                        <strong>CÁLCULO Nº #{{ calculo.id }}</strong>
+                    </span>
+                    <small class="text-muted d-block font-monospace">
+                        Emissão: {{ data_emissao|date:"d/m/Y H:i" }}
+                    </small>
+                    <small class="text-muted d-block">
+                        Emitido por: {{ emitido_por.nome_completo|default:emitido_por.username }}
+                    </small>
+                </div>
+            </div>
+        </div>
+
+        <!-- QUADRO DE METADADOS DA REFEIÇÃO -->
+        <div class="border border-dark rounded-3 p-3 mb-4 bg-light">
+            <div class="row g-3 text-dark">
+                <div class="col-6 col-md-3">
+                    <span class="small text-muted text-uppercase fw-bold d-block">Data do Consumo:</span>
+                    <span class="fs-5 fw-bold">{{ calculo.frequencia.data_refeicao|date:"d/m/Y" }}</span>
+                    <small class="d-block text-secondary">({{ calculo.frequencia.data_refeicao|date:"l"|title }})</small>
+                </div>
+                <div class="col-6 col-md-3">
+                    <span class="small text-muted text-uppercase fw-bold d-block">Refeição / Turno:</span>
+                    <span class="fs-5 fw-bold text-primary">{{ calculo.frequencia.get_refeicao_turno_display }}</span>
+                </div>
+                <div class="col-6 col-md-3">
+                    <span class="small text-muted text-uppercase fw-bold d-block">Presença Confirmada:</span>
+                    <span class="fs-5 fw-bold text-danger">{{ calculo.frequencia.total_estudantes_presentes }}</span>
+                    <small class="text-muted">estudantes</small>
+                </div>
+                <div class="col-6 col-md-3">
+                    <span class="small text-muted text-uppercase fw-bold d-block">Situação no Sistema:</span>
+                    {% if calculo.conferido %}
+                        <span class="badge bg-success text-white border-0 px-2 py-1">
+                            <i class="bi bi-check-circle me-1"></i>Conferido
+                        </span>
+                    {% else %}
+                        <span class="badge bg-warning text-dark border-0 px-2 py-1">
+                            <i class="bi bi-clock me-1"></i>Pendente
+                        </span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="row mt-2 pt-2 border-top border-secondary-subtle">
+                <div class="col-12">
+                    <span class="small text-muted text-uppercase fw-bold">Cardápio Programado:</span>
+                    <strong class="text-dark ms-2">{{ calculo.cardapio.nome }}</strong>
+                    {% if calculo.cardapio.descricao %}
+                        <span class="text-muted ms-2">— {{ calculo.cardapio.descricao }}</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- TABELA DE INGREDIENTES E CHECKLIST DE CONFERÊNCIA FÍSICA -->
+        <div class="mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h3 class="h6 fw-bold text-uppercase mb-0 text-dark">
+                    <i class="bi bi-list-check me-1 d-print-none"></i>1. Relação de Ingredientes & Dosagem Calculada
+                </h3>
+                <small class="text-muted d-print-none">Marque [✓] após separar cada item no estoque</small>
+            </div>
+
+            <table class="table table-bordered align-middle mb-0">
+                <thead class="table-dark-header">
+                    <tr class="text-center align-middle">
+                        <th style="width: 45px;">Conf.</th>
+                        <th class="text-start">Ingrediente</th>
+                        <th style="width: 140px;">Qtd. Prevista</th>
+                        <th style="width: 80px;">Unidade</th>
+                        <th style="width: 140px;">Qtd. Utilizada</th>
+                        <th>Observações / Justificativa</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in itens %}
+                    <tr>
+                        <td class="text-center">
+                            <span class="check-box-print"></span>
+                        </td>
+                        <td class="fw-bold text-dark">
+                            {{ item.ingrediente.nome }}
+                            {% if item.ingrediente.observacoes %}
+                                <small class="text-muted d-block fw-normal fst-italic">{{ item.ingrediente.observacoes }}</small>
+                            {% endif %}
+                        </td>
+                        <td class="text-center font-monospace fw-bold fs-6">
+                            {{ item.quantidade_calculada }}
+                        </td>
+                        <td class="text-center fw-semibold">
+                            {{ item.get_unidade_medida_display }}
+                        </td>
+                        <td class="text-center font-monospace fw-bold">
+                            {% if item.quantidade_ajustada is not None %}
+                                <span class="text-danger">{{ item.quantidade_ajustada }}</span>
+                            {% else %}
+                                <span class="text-muted">______</span>
+                            {% endif %}
+                        </td>
+                        <td class="small">
+                            {% if item.justificativa_ajuste %}
+                                <span class="fw-semibold">Ajuste registrado:</span> {{ item.justificativa_ajuste }}
+                            {% else %}
+                                <span class="text-muted">&nbsp;</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-3 text-muted">
+                            Nenhum ingrediente computado para esta refeição.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- FICHAS TÉCNICAS E MODO DE PREPARO DAS PREPARAÇÕES -->
+        {% if receitas %}
+        <div class="mb-4 print-avoid-break">
+            <h3 class="h6 fw-bold text-uppercase mb-2 text-dark">
+                <i class="bi bi-journal-text me-1 d-print-none"></i>2. Fichas Técnicas & Modo de Preparo
+            </h3>
+            <div class="row g-3">
+                {% for receita in receitas %}
+                <div class="col-12 col-md-6">
+                    <div class="border border-dark rounded-3 p-3 h-100 bg-white">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <strong class="text-dark">{{ receita.nome }}</strong>
+                            <small class="badge bg-light text-dark border">
+                                Rendimento: {{ receita.fator_rendimento }}
+                            </small>
+                        </div>
+                        {% if receita.modo_preparo %}
+                            <p class="small text-secondary mb-2" style="white-space: pre-line;">{{ receita.modo_preparo }}</p>
+                        {% else %}
+                            <p class="small text-muted fst-italic mb-2">Sem instruções cadastradas.</p>
+                        {% endif %}
+
+                        <div class="border-top pt-2 mt-2">
+                            <small class="fw-semibold d-block mb-1">Insumos da Ficha:</small>
+                            <ul class="list-unstyled small mb-0 ps-1">
+                                {% for item_rec in receita.itens.all %}
+                                <li>
+                                    &bull; {{ item_rec.ingrediente.nome }}:
+                                    <strong>{{ item_rec.quantidade_padrao }} {{ item_rec.get_unidade_medida_display }}</strong>
+                                    <span class="text-muted">({{ item_rec.get_base_calculo_display }})</span>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- BLOCO DE AUDITORIA E ASSINATURAS -->
+        <div class="mt-4 pt-3 print-avoid-break">
+            <h3 class="h6 fw-bold text-uppercase mb-3 text-dark">
+                <i class="bi bi-pen me-1 d-print-none"></i>3. Termo de Conferência e Responsabilidade
+            </h3>
+
+            <div class="row g-4 mt-2">
+                <div class="col-6">
+                    <div class="signature-line">
+                        Responsável pelo Preparo (Merendeira)
+                        <div class="text-muted small fw-normal">Assinatura / Nome Legível</div>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="signature-line">
+                        Nutricionista / Gestão Escolar
+                        <div class="text-muted small fw-normal">CRN / Matrícula / Visto</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mt-4 pt-2">
+                <div class="col-12 text-center text-muted small">
+                    <hr class="border-dark my-2">
+                    <span>Sistema de Planejamento da Alimentação Escolar (SPAE) &bull; Impresso em {{ data_emissao|date:"d/m/Y \à\s H:i:s" }}</span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+{% endblock %}
