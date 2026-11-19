@@ -306,9 +306,9 @@ python manage.py test
   - [x] Model de Ingredientes com unidades padrão e admin (`g`, `kg`, `ml`, `L`, `un`).
   - [x] CRUD de Cardápios e Fichas Técnicas (`ReceitaFichaTecnica`, `ItemReceita`).
   - [x] Validação de quantidades e unidades.
-- [ ] **Etapa 3: Módulo de Frequência Diária**
-  - [ ] Formulário ágil mobile para lançamento de presença por data e turno/refeição.
-  - [ ] Histórico de presenças.
+- [x] **Etapa 3: Módulo de Frequência Diária**
+  - [x] Formulário ágil mobile para lançamento de presença por data e turno/refeição.
+  - [x] Histórico de presenças.
 - [ ] **Etapa 4: Motor de Cálculo e Conferência**
   - [ ] Implementação do algoritmo de cálculo proporcional.
   - [ ] Tela de visualização limpa do cálculo com lista de ingredientes (destaque visual).

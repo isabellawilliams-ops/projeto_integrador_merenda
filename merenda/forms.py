@@ -1,6 +1,8 @@
 from django import forms
 from django.contrib.auth.forms import AuthenticationForm
 
+from .models import FrequenciaDiaria, TipoRefeicao
+
 
 class LoginForm(AuthenticationForm):
     username = forms.CharField(
@@ -36,3 +38,47 @@ class LoginForm(AuthenticationForm):
             "Esta conta de usuário está desativada. Entre em contato com a gestão escolar ou coordenação."
         ),
     }
+
+
+class FrequenciaDiariaForm(forms.ModelForm):
+    class Meta:
+        model = FrequenciaDiaria
+        fields = ['data_refeicao', 'refeicao_turno', 'total_estudantes_presentes']
+        widgets = {
+            'data_refeicao': forms.DateInput(
+                attrs={
+                    'type': 'date',
+                    'class': 'form-control form-control-lg',
+                    'id': 'id_data_refeicao',
+                }
+            ),
+            'refeicao_turno': forms.Select(
+                attrs={
+                    'class': 'form-select form-select-lg',
+                    'id': 'id_refeicao_turno',
+                }
+            ),
+            'total_estudantes_presentes': forms.NumberInput(
+                attrs={
+                    'class': 'form-control form-control-lg',
+                    'inputmode': 'numeric',
+                    'placeholder': 'Ex: 120',
+                    'min': '1',
+                    'id': 'id_total_estudantes',
+                }
+            ),
+        }
+        labels = {
+            'data_refeicao': 'Data da Refeição',
+            'refeicao_turno': 'Turno / Refeição',
+            'total_estudantes_presentes': 'Total de Estudantes Presentes',
+        }
+        help_texts = {
+            'total_estudantes_presentes': 'Informe o número exato de alunos que receberão esta refeição.',
+        }
+
+    def clean_total_estudantes_presentes(self):
+        total = self.cleaned_data.get('total_estudantes_presentes')
+        if total is None or total <= 0:
+            raise forms.ValidationError("A quantidade de estudantes deve ser maior que zero.")
+        return total

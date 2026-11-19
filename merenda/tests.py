@@ -396,3 +396,109 @@ class AutenticacaoViewsTest(TestCase):
         self.assertContains(response, 'Planejamento e Refeição de Hoje')
         self.assertContains(response, 'Dona Lurdes')
 
+
+class FrequenciaViewsTest(TestCase):
+    def setUp(self):
+        self.user_secretaria = Usuario.objects.create_user(
+            username='secretaria_teste',
+            password='senha_secretaria_123',
+            nome_completo='Ana Secretaria',
+            perfil=PerfilUsuario.FREQUENCIA
+        )
+        self.client.login(username='secretaria_teste', password='senha_secretaria_123')
+        self.freq = FrequenciaDiaria.objects.create(
+            usuario_registro=self.user_secretaria,
+            data_refeicao=date(2026, 11, 20),
+            refeicao_turno=TipoRefeicao.ALMOCO,
+            total_estudantes_presentes=135
+        )
+
+    def test_frequencia_lista_carrega_sucesso(self):
+        response = self.client.get('/frequencia/')
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'frequencia/lista.html')
+        self.assertContains(response, '135')
+        self.assertContains(response, 'Almoço')
+
+    def test_frequencia_lista_filtros(self):
+        response = self.client.get('/frequencia/?refeicao=almoco')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context['frequencias']), 1)
+
+        response_lanche = self.client.get('/frequencia/?refeicao=lanche_manha')
+        self.assertEqual(response_lanche.status_code, 200)
+        self.assertEqual(len(response_lanche.context['frequencias']), 0)
+
+    def test_frequencia_registro_get(self):
+        response = self.client.get('/frequencia/registrar/')
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'frequencia/form.html')
+        self.assertContains(response, 'Confirmar Presença')
+
+    def test_frequencia_registro_post_novo(self):
+        response = self.client.post('/frequencia/registrar/', {
+            'data_refeicao': '2026-11-21',
+            'refeicao_turno': TipoRefeicao.LANCHE_MANHA,
+            'total_estudantes_presentes': 140,
+        }, follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(FrequenciaDiaria.objects.filter(
+            data_refeicao=date(2026, 11, 21),
+            refeicao_turno=TipoRefeicao.LANCHE_MANHA,
+            total_estudantes_presentes=140
+        ).exists())
+
+    def test_frequencia_registro_post_atualiza_existente(self):
+        response = self.client.post('/frequencia/registrar/', {
+            'data_refeicao': '2026-11-20',
+            'refeicao_turno': TipoRefeicao.ALMOCO,
+            'total_estudantes_presentes': 155,
+        }, follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.freq.refresh_from_db()
+        self.assertEqual(self.freq.total_estudantes_presentes, 155)
+
+    def test_frequencia_registro_post_invalido(self):
+        response = self.client.post('/frequencia/registrar/', {
+            'data_refeicao': '2026-11-20',
+            'refeicao_turno': TipoRefeicao.ALMOCO,
+            'total_estudantes_presentes': 0,
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertFormError(response.context['form'], 'total_estudantes_presentes', 'A quantidade de estudantes deve ser maior que zero.')
+
+    def test_frequencia_editar_view(self):
+        response = self.client.post(f'/frequencia/{self.freq.id}/editar/', {
+            'data_refeicao': '2026-11-20',
+            'refeicao_turno': TipoRefeicao.ALMOCO,
+            'total_estudantes_presentes': 160,
+        }, follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.freq.refresh_from_db()
+        self.assertEqual(self.freq.total_estudantes_presentes, 160)
+
+    def test_frequencia_excluir_view_sem_vinculo(self):
+        freq_temp = FrequenciaDiaria.objects.create(
+            usuario_registro=self.user_secretaria,
+            data_refeicao=date(2026, 11, 22),
+            refeicao_turno=TipoRefeicao.ALMOCO,
+            total_estudantes_presentes=80
+        )
+        response = self.client.post(f'/frequencia/{freq_temp.id}/excluir/', follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(FrequenciaDiaria.objects.filter(id=freq_temp.id).exists())
+
+    def test_frequencia_excluir_bloqueado_quando_vinculado_calculo(self):
+        cardapio = Cardapio.objects.create(nome='Cardápio Teste', refeicao=TipoRefeicao.ALMOCO)
+        CalculoDiario.objects.create(
+            cardapio=cardapio,
+            frequencia=self.freq,
+            usuario_responsavel=self.user_secretaria,
+            data_calculo=date(2026, 11, 20)
+        )
+        response = self.client.post(f'/frequencia/{self.freq.id}/excluir/', follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(FrequenciaDiaria.objects.filter(id=self.freq.id).exists())
+        self.assertContains(response, 'Não é possível excluir esta frequência')
+
+

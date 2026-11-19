@@ -1,0 +1,181 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Histórico de Frequências — SPAE{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+
+    <!-- Header da Página -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <a href="{% url 'home' %}" class="btn btn-outline-secondary btn-sm rounded-pill px-2 py-1" title="Voltar ao Painel">
+                    <i class="bi bi-arrow-left"></i>
+                </a>
+                <h1 class="h4 fw-bold mb-0 text-dark">
+                    <i class="bi bi-people-fill text-primary me-2"></i>Frequência Diária
+                </h1>
+            </div>
+            <p class="text-muted small mb-0">
+                Controle de presença diária de estudantes para estimativa da merenda escolar
+            </p>
+        </div>
+
+        <a href="{% url 'frequencia_registrar' %}" class="btn btn-primary rounded-pill px-4 py-2 shadow-sm d-inline-flex align-items-center gap-2">
+            <i class="bi bi-plus-circle fs-5"></i>
+            <span>Lançar Nova Frequência</span>
+        </a>
+    </div>
+
+    <!-- Cards de Resumo Rápido -->
+    <div class="row g-3 mb-4">
+        <div class="col-12 col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="p-3 bg-primary-subtle text-primary rounded-4 fs-3">
+                        <i class="bi bi-calendar-check"></i>
+                    </div>
+                    <div>
+                        <span class="text-muted small d-block">Presença de Hoje ({{ hoje|date:"d/m" }})</span>
+                        <h2 class="h4 fw-bold mb-0 text-primary">
+                            {% if total_hoje %}
+                                {{ total_hoje.total_estudantes_presentes }} alunos
+                            {% else %}
+                                Não lançada
+                            {% endif %}
+                        </h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="p-3 bg-success-subtle text-success rounded-4 fs-3">
+                        <i class="bi bi-graph-up"></i>
+                    </div>
+                    <div>
+                        <span class="text-muted small d-block">Média de Presença</span>
+                        <h2 class="h4 fw-bold mb-0 text-success">{{ media_alunos }} alunos</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="p-3 bg-secondary-subtle text-secondary rounded-4 fs-3">
+                        <i class="bi bi-journal-bookmark-fill"></i>
+                    </div>
+                    <div>
+                        <span class="text-muted small d-block">Total de Registros</span>
+                        <h2 class="h4 fw-bold mb-0 text-secondary">{{ frequencias.count }} lançamentos</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Barra de Filtros -->
+    <div class="card border-0 shadow-sm rounded-4 bg-white p-3 mb-4">
+        <form method="get" class="row g-2 align-items-center">
+            <div class="col-12 col-md-4">
+                <label for="filtro_refeicao" class="form-label small fw-semibold text-secondary mb-1">Filtrar por Refeição</label>
+                <select name="refeicao" id="filtro_refeicao" class="form-select form-select-sm rounded-pill">
+                    <option value="">Todas as refeições</option>
+                    {% for valor, rotulo in tipos_refeicao %}
+                        <option value="{{ valor }}" {% if refeicao_filtro == valor %}selected{% endif %}>{{ rotulo }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-12 col-md-4">
+                <label for="filtro_data" class="form-label small fw-semibold text-secondary mb-1">Filtrar por Data</label>
+                <input type="date" name="data" id="filtro_data" class="form-control form-control-sm rounded-pill" value="{{ data_filtro }}">
+            </div>
+            <div class="col-12 col-md-4 d-flex gap-2 align-items-end mt-3 mt-md-0">
+                <button type="submit" class="btn btn-outline-primary btn-sm rounded-pill px-3 py-1 flex-grow-1">
+                    <i class="bi bi-funnel me-1"></i>Filtrar
+                </button>
+                {% if refeicao_filtro or data_filtro %}
+                <a href="{% url 'frequencia_lista' %}" class="btn btn-outline-secondary btn-sm rounded-pill px-3 py-1" title="Limpar filtros">
+                    <i class="bi bi-x-circle"></i>
+                </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+
+    <!-- Tabela de Registros -->
+    <div class="card border-0 shadow-sm rounded-4 bg-white overflow-hidden">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">Data</th>
+                        <th>Turno / Refeição</th>
+                        <th>Presentes</th>
+                        <th>Registrado Por</th>
+                        <th>Registrado em</th>
+                        <th class="text-end pe-4">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for freq in frequencias %}
+                    <tr>
+                        <td class="ps-4 fw-semibold text-dark">
+                            {{ freq.data_refeicao|date:"d/m/Y" }}
+                            {% if freq.data_refeicao == hoje %}
+                                <span class="badge bg-success-subtle text-success ms-1">Hoje</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge bg-light text-dark border rounded-pill px-3 py-2">
+                                <i class="bi bi-clock me-1 text-primary"></i>{{ freq.get_refeicao_turno_display }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="fs-6 fw-bold text-primary">
+                                {{ freq.total_estudantes_presentes }}
+                            </span>
+                            <span class="text-muted small">alunos</span>
+                        </td>
+                        <td class="small text-secondary">
+                            <i class="bi bi-person me-1"></i>{{ freq.usuario_registro.nome_completo|default:freq.usuario_registro.username }}
+                        </td>
+                        <td class="small text-muted">
+                            {{ freq.registrado_em|date:"d/m/Y H:i" }}
+                        </td>
+                        <td class="text-end pe-4">
+                            <div class="btn-group btn-group-sm" role="group">
+                                <a href="{% url 'frequencia_editar' freq.id %}" class="btn btn-outline-secondary rounded-pill me-1" title="Editar presença">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <a href="{% url 'frequencia_excluir' freq.id %}" class="btn btn-outline-danger rounded-pill" title="Excluir presença">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-5 text-muted">
+                            <div class="mb-2 fs-1 text-secondary opacity-50">
+                                <i class="bi bi-clipboard-x"></i>
+                            </div>
+                            <p class="mb-2 fw-semibold">Nenhuma frequência encontrada.</p>
+                            <a href="{% url 'frequencia_registrar' %}" class="btn btn-primary btn-sm rounded-pill px-3">
+                                Cadastrar Primeira Frequência
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
