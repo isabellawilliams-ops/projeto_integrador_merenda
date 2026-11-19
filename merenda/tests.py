@@ -385,3 +385,14 @@ class AutenticacaoViewsTest(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, '/')
 
+    def test_dashboard_home_exibe_contexto_e_metricas(self):
+        self.client.login(username='merendeira_teste', password='senha_correta_123')
+        response = self.client.get('/')
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'home.html')
+        self.assertIn('cardapio_hoje', response.context)
+        self.assertIn('total_cardapios', response.context)
+        self.assertIn('total_ingredientes', response.context)
+        self.assertContains(response, 'Planejamento e Refeição de Hoje')
+        self.assertContains(response, 'Dona Lurdes')
+
