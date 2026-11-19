@@ -317,3 +317,71 @@ class FrequenciaECalculoDiarioTest(TestCase):
         )
         with self.assertRaises(ProtectedError):
             self.frequencia.delete()
+
+
+class AutenticacaoViewsTest(TestCase):
+    def setUp(self):
+        self.user = Usuario.objects.create_user(
+            username='merendeira_teste',
+            password='senha_correta_123',
+            nome_completo='Dona Lurdes',
+            perfil=PerfilUsuario.REFEITORIO
+        )
+        self.user_inativo = Usuario.objects.create_user(
+            username='usuario_desativado',
+            password='senha_correta_123',
+            ativo=False
+        )
+
+    def test_tela_login_carrega_sucesso(self):
+        response = self.client.get('/login/')
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'login.html')
+        self.assertContains(response, 'SPAE')
+        self.assertContains(response, 'Entrar no Sistema')
+
+    def test_pagina_protegida_redireciona_para_login(self):
+        response = self.client.get('/')
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(response.url.startswith('/login/'))
+
+    def test_login_sucesso(self):
+        response = self.client.post('/login/', {
+            'username': 'merendeira_teste',
+            'password': 'senha_correta_123',
+        }, follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context['user'].is_authenticated)
+        self.assertContains(response, 'Dona Lurdes')
+        self.assertContains(response, 'Refeitório (Merendeira)')
+
+    def test_login_senha_incorreta(self):
+        response = self.client.post('/login/', {
+            'username': 'merendeira_teste',
+            'password': 'senha_errada_xyz',
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.context['user'].is_authenticated)
+        self.assertContains(response, 'Usuário ou senha incorretos')
+
+    def test_login_usuario_inativo_bloqueado(self):
+        response = self.client.post('/login/', {
+            'username': 'usuario_desativado',
+            'password': 'senha_correta_123',
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.context['user'].is_authenticated)
+
+    def test_logout_sucesso(self):
+        self.client.login(username='merendeira_teste', password='senha_correta_123')
+        response = self.client.get('/logout/', follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.context['user'].is_authenticated)
+        self.assertTemplateUsed(response, 'login.html')
+
+    def test_usuario_autenticado_acessando_login_redirecionado(self):
+        self.client.login(username='merendeira_teste', password='senha_correta_123')
+        response = self.client.get('/login/')
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, '/')
+

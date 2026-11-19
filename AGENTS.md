@@ -298,10 +298,10 @@ python manage.py test
 
 ## 9. Lista de Verificação de Implementação (Roadmap)
 
-- [ ] **Etapa 1: Setup do Projeto e Autenticação**
+- [x] **Etapa 1: Setup do Projeto e Autenticação**
   - [x] Configuração do projeto Django com settings em português (`pt-br`, `America/Sao_Paulo`).
   - [x] Implementação do modelo `Usuario` com perfis (`refeitorio`, `frequencia`, `gestao`, `admin`).
-  - [ ] Tela de Login e controle de acesso por perfil.
+  - [x] Tela de Login e controle de acesso por perfil.
 - [ ] **Etapa 2: Módulo de Cardápios e Ingredientes**
   - [x] Model de Ingredientes com unidades padrão e admin (`g`, `kg`, `ml`, `L`, `un`).
   - [x] CRUD de Cardápios e Fichas Técnicas (`ReceitaFichaTecnica`, `ItemReceita`).

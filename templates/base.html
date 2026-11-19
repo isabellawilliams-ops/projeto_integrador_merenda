@@ -1,0 +1,87 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#198754">
+    <meta name="description" content="SPAE - Sistema de Planejamento da Alimentação Escolar">
+    <title>{% block title %}SPAE - Alimentação Escolar{% endblock %}</title>
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <!-- Estilo SPAE Customizado -->
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    {% block navbar %}
+    {% if user.is_authenticated %}
+    <nav class="navbar navbar-expand-lg spae-navbar sticky-top">
+        <div class="container-fluid px-3">
+            <a class="navbar-brand d-flex align-items-center gap-2 fw-bold text-success" href="{% url 'home' %}">
+                <i class="bi bi-egg-fried fs-4"></i>
+                <span>SPAE</span>
+            </a>
+            <div class="d-flex align-items-center gap-2">
+                <span class="badge bg-success-subtle text-success spae-badge-perfil d-none d-sm-inline-block">
+                    <i class="bi bi-person-badge me-1"></i>{{ user.get_perfil_display }}
+                </span>
+                <span class="fw-semibold text-truncate d-none d-md-inline" style="max-width: 160px;">
+                    {{ user.nome_completo|default:user.username }}
+                </span>
+                <a href="{% url 'logout' %}" class="btn btn-outline-danger btn-sm rounded-pill px-3 py-1" title="Encerrar sessão">
+                    <i class="bi bi-box-arrow-right me-1"></i>Sair
+                </a>
+            </div>
+        </div>
+    </nav>
+    {% endif %}
+    {% endblock %}
+
+    <main class="flex-grow-1">
+        <!-- Mensagens do Django Messages Framework -->
+        {% if messages %}
+        <div class="container-fluid px-3 mt-3">
+            <div class="row justify-content-center">
+                <div class="col-12 col-md-8 col-lg-6">
+                    {% for message in messages %}
+                    <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show shadow-sm border-0 rounded-4" role="alert">
+                        <div class="d-flex align-items-center gap-2">
+                            {% if message.tags == 'success' %}
+                                <i class="bi bi-check-circle-fill fs-5 text-success"></i>
+                            {% elif message.tags == 'error' or message.tags == 'danger' %}
+                                <i class="bi bi-exclamation-triangle-fill fs-5 text-danger"></i>
+                            {% else %}
+                                <i class="bi bi-info-circle-fill fs-5 text-primary"></i>
+                            {% endif %}
+                            <div>{{ message }}</div>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="footer-spae">
+        <div class="container text-center">
+            <p class="mb-0 text-muted">
+                <strong>SPAE</strong> — Sistema de Planejamento da Alimentação Escolar &copy; 2026
+            </p>
+            <small class="text-secondary">Desenvolvido para apoio às profissionais do refeitório e gestão escolar</small>
+        </div>
+    </footer>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    <script src="{% static 'js/main.js' %}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

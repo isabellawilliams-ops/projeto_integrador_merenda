@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Entrar — SPAE Alimentação Escolar{% endblock %}
+
+{% block navbar %}{% endblock %}
+
+{% block content %}
+<div class="login-container d-flex flex-column justify-content-center min-vh-100 py-4">
+    <div class="login-card">
+        <!-- Cabeçalho do Card -->
+        <div class="login-header">
+            <div class="login-logo-circle">
+                <i class="bi bi-egg-fried"></i>
+            </div>
+            <h1 class="h4 fw-bold mb-1">SPAE</h1>
+            <p class="small mb-0 opacity-75">
+                Sistema de Planejamento da Alimentação Escolar
+            </p>
+        </div>
+
+        <!-- Corpo do Formulário -->
+        <div class="login-body">
+            <div class="text-center mb-4">
+                <h2 class="h5 fw-bold text-dark mb-1">Acesso ao Sistema</h2>
+                <p class="text-muted small mb-0">Informe suas credenciais para continuar</p>
+            </div>
+
+            <!-- Alertas de Erro do Formulário -->
+            {% if form.non_field_errors %}
+            <div class="alert alert-danger rounded-4 py-2 px-3 small mb-3 border-0 shadow-sm" role="alert">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-exclamation-circle-fill text-danger fs-5 flex-shrink-0"></i>
+                    <div>
+                        {% for error in form.non_field_errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <form method="post" action="{% url 'login' %}" novalidate>
+                {% csrf_token %}
+
+                <!-- Campo Usuário -->
+                <div class="mb-3">
+                    <label for="id_username" class="form-label fw-semibold small text-secondary">
+                        <i class="bi bi-person me-1"></i>Usuário
+                    </label>
+                    <div class="input-icon-group">
+                        <i class="bi bi-person-fill field-icon"></i>
+                        {{ form.username }}
+                    </div>
+                    {% if form.username.errors %}
+                        <div class="text-danger small mt-1 ps-1">
+                            {{ form.username.errors.0 }}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Campo Senha -->
+                <div class="mb-4">
+                    <label for="id_password" class="form-label fw-semibold small text-secondary">
+                        <i class="bi bi-shield-lock me-1"></i>Senha
+                    </label>
+                    <div class="input-icon-group">
+                        <i class="bi bi-lock-fill field-icon"></i>
+                        {{ form.password }}
+                        <button type="button" class="password-toggle-btn" id="togglePassword" title="Mostrar/Ocultar Senha" tabindex="-1">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </div>
+                    {% if form.password.errors %}
+                        <div class="text-danger small mt-1 ps-1">
+                            {{ form.password.errors.0 }}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Botão de Login Grande Mobile-First -->
+                <button type="submit" class="btn btn-spae w-100 py-3 fs-5 shadow-sm mb-3">
+                    <i class="bi bi-box-arrow-in-right me-1"></i>Entrar no Sistema
+                </button>
+            </form>
+
+            <!-- Acesso Rápido de Demonstração (Facilita testes da banca e usuárias) -->
+            <div class="pt-3 border-top text-center">
+                <p class="text-muted small fw-semibold mb-2">
+                    <i class="bi bi-lightning-charge-fill text-warning me-1"></i>Acesso Rápido para Testes:
+                </p>
+                <div class="d-flex flex-wrap justify-content-center gap-1">
+                    <span class="demo-pill" data-user="merendeira" data-pass="merenda123" title="Clique para preencher">
+                        <i class="bi bi-egg-fried me-1 text-success"></i>Merendeira
+                    </span>
+                    <span class="demo-pill" data-user="secretaria" data-pass="portaria123" title="Clique para preencher">
+                        <i class="bi bi-clipboard-check me-1 text-primary"></i>Secretaria
+                    </span>
+                    <span class="demo-pill" data-user="nutricionista" data-pass="nutri123" title="Clique para preencher">
+                        <i class="bi bi-journal-medical me-1 text-info"></i>Nutricionista
+                    </span>
+                    <span class="demo-pill" data-user="admin" data-pass="admin123" title="Clique para preencher">
+                        <i class="bi bi-gear-fill me-1 text-dark"></i>Admin
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
