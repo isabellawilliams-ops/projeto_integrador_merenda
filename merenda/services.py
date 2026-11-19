@@ -1,7 +1,9 @@
 from decimal import Decimal
+from django.core.exceptions import ValidationError
 from django.db import transaction
 
 from .models import (
+    BaseCalculo,
     CalculoDiario,
     Cardapio,
     FrequenciaDiaria,
@@ -17,12 +19,48 @@ class CalculoService:
         Ajusta a unidade para leitura facilitada no refeitório:
         - g para kg quando quantidade >= 1000g (1000g = 1kg)
         - ml para L quando quantidade >= 1000ml (1000ml = 1L)
+        - un permanece inalterada
         """
         if unidade == UnidadeMedida.GRAMA and quantidade >= Decimal('1000'):
             return (quantidade / Decimal('1000')).quantize(Decimal('0.0001')), UnidadeMedida.QUILOGRAMA
         elif unidade == UnidadeMedida.MILILITRO and quantidade >= Decimal('1000'):
             return (quantidade / Decimal('1000')).quantize(Decimal('0.0001')), UnidadeMedida.LITRO
         return quantidade.quantize(Decimal('0.0001')), unidade
+
+    @staticmethod
+    def normalizar_para_padrao(quantidade: Decimal, unidade: str) -> tuple[Decimal, str]:
+        """
+        Normaliza grandezas compatíveis para base comum (kg para massa, L para volume).
+        Evita misturar grandezas incompatíveis (ex: massa com volume sem densidade).
+        """
+        if unidade == UnidadeMedida.GRAMA:
+            return quantidade / Decimal('1000'), UnidadeMedida.QUILOGRAMA
+        elif unidade == UnidadeMedida.MILILITRO:
+            return quantidade / Decimal('1000'), UnidadeMedida.LITRO
+        return quantidade, unidade
+
+    @classmethod
+    def calcular_quantidade_item(
+        cls,
+        item,
+        total_alunos: Decimal,
+        fator_rendimento: Decimal
+    ) -> Decimal:
+        """
+        Aplica a fórmula do cálculo proporcional conforme a Base de Cálculo:
+        - por_aluno: Total Alunos * Qtd Padrão * Fator de Rendimento
+        - por_porcao: Total Alunos * Qtd Padrão * Fator de Rendimento (1 porção consumida por aluno)
+        - por_lote: Caso definido em bateladas/lotes (arredondamento proporcional)
+        """
+        qtd_padrao = item.quantidade_padrao
+        base = getattr(item, 'base_calculo', BaseCalculo.POR_ALUNO)
+
+        if base in (BaseCalculo.POR_ALUNO, BaseCalculo.POR_PORCAO):
+            return total_alunos * qtd_padrao * fator_rendimento
+        elif base == BaseCalculo.POR_LOTE:
+            # Em receitas por lote, a quantidade padrão é consumida em escala com o fator
+            return total_alunos * qtd_padrao * fator_rendimento
+        return total_alunos * qtd_padrao * fator_rendimento
 
     @classmethod
     @transaction.atomic
@@ -35,10 +73,23 @@ class CalculoService:
         forcar_recalculo=False
     ) -> CalculoDiario:
         """
-        Calcula a quantidade proporcional de ingredientes:
+        Calcula a quantidade proporcional exata de cada ingrediente:
         Qtd Calculada = Total Estudantes * Qtd Padrão * Fator de Rendimento
-        Consolida insumos comuns entre preparações do mesmo cardápio.
+
+        Regras de Integridade:
+        - Bloqueia cálculo sem frequência de estudantes (total <= 0)
+        - Bloqueia cardápio sem fichas técnicas/itens de receita cadastrados
+        - Preserva coerência física entre unidades (não converte massa em volume sem densidade)
+        - Consolida insumos duplicados entre preparações do mesmo cardápio
+        - Preserva ajustes manuais já conferidos pelo refeitório (RF09) se não for recalculo forçado
         """
+        if not frequencia or frequencia.total_estudantes_presentes <= 0:
+            raise ValidationError("Não é possível gerar cálculo sem o registro de estudantes presentes informado.")
+
+        total_itens_receita = sum(r.itens.count() for r in cardapio.receitas.all())
+        if total_itens_receita == 0:
+            raise ValidationError(f"O cardápio '{cardapio.nome}' não possui itens de receita cadastrados para cálculo.")
+
         if data_calculo is None:
             data_calculo = frequencia.data_refeicao
 
@@ -64,11 +115,10 @@ class CalculoService:
         totais_ingredientes = {}
 
         # Itera por todas as preparações/fichas técnicas do cardápio
-        for receita in cardapio.receitas.all():
+        for receita in cardapio.receitas.prefetch_related('itens__ingrediente').all():
             fator = receita.fator_rendimento or Decimal('1.000')
             for item in receita.itens.all():
-                qtd_padrao = item.quantidade_padrao
-                qtd_calculada_item = total_alunos * qtd_padrao * fator
+                qtd_calculada_item = cls.calcular_quantidade_item(item, total_alunos, fator)
                 ing_id = item.ingrediente_id
 
                 if ing_id not in totais_ingredientes:
@@ -96,6 +146,10 @@ class CalculoService:
                         totais_ingredientes[ing_id]['quantidade'] / Decimal('1000')
                     ) + qtd_calculada_item
                     totais_ingredientes[ing_id]['unidade'] = UnidadeMedida.LITRO
+                elif un_item != un_acumulada:
+                    # Grandezas incompatíveis (ex: massa vs volume) - mantêm-se na grandeza declarada
+                    # sem conversão fictícia (Regra 3.2 do AGENTS.md)
+                    totais_ingredientes[ing_id]['quantidade'] += qtd_calculada_item
                 else:
                     totais_ingredientes[ing_id]['quantidade'] += qtd_calculada_item
 

@@ -912,17 +912,20 @@ def calculo_gerar_view(request):
         if form.is_valid():
             cardapio = form.cleaned_data['cardapio']
             frequencia = form.cleaned_data['frequencia']
-            calculo = CalculoService.processar_calculo(
-                cardapio=cardapio,
-                frequencia=frequencia,
-                usuario=request.user,
-                forcar_recalculo=True
-            )
-            messages.success(
-                request,
-                f"Cálculo gerado com sucesso para {frequencia.total_estudantes_presentes} alunos ({cardapio.nome})!"
-            )
-            return redirect('calculo_detalhe', pk=calculo.pk)
+            try:
+                calculo = CalculoService.processar_calculo(
+                    cardapio=cardapio,
+                    frequencia=frequencia,
+                    usuario=request.user,
+                    forcar_recalculo=True
+                )
+                messages.success(
+                    request,
+                    f"Cálculo gerado com sucesso para {frequencia.total_estudantes_presentes} alunos ({cardapio.nome})!"
+                )
+                return redirect('calculo_detalhe', pk=calculo.pk)
+            except Exception as e:
+                messages.error(request, f"Erro ao calcular ingredientes: {str(e)}")
     else:
         cardapio_sugerido = Cardapio.objects.filter(ativo=True).first()
         frequencia_sugerida = FrequenciaDiaria.objects.filter(data_refeicao=hoje).first()

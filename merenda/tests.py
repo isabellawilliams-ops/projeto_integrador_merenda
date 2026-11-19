@@ -663,6 +663,67 @@ class CalculosModuloViewsTest(TestCase):
         # 100 alunos * 0.0800 = 8.0000 kg (formatado como 8,0000 em pt-br)
         self.assertContains(response, '8,0000')
 
+    def test_calculo_proporcional_consolidacao_mesmo_ingrediente(self):
+        # Adiciona uma segunda receita que usa o mesmo ingrediente Macarrão Parafuso
+        receita_sopa = ReceitaFichaTecnica.objects.create(
+            cardapio=self.cardapio,
+            nome='Sopa de Legumes com Massa',
+            fator_rendimento=Decimal('1.000')
+        )
+        ItemReceita.objects.create(
+            receita=receita_sopa,
+            ingrediente=self.ing,
+            quantidade_padrao=Decimal('20.0000'),  # 20g por aluno
+            unidade_medida=UnidadeMedida.GRAMA,    # Unidade em gramas
+            base_calculo=BaseCalculo.POR_ALUNO
+        )
+        # Recalcula
+        calculo_atualizado = CalculoService.processar_calculo(
+            cardapio=self.cardapio,
+            frequencia=self.freq,
+            usuario=self.user,
+            forcar_recalculo=True
+        )
+        # 100 alunos * 0.08kg = 8kg + 100 alunos * 20g (2kg) = 10kg
+        item_calc = calculo_atualizado.itens.get(ingrediente=self.ing)
+        self.assertEqual(item_calc.quantidade_calculada, Decimal('10.0000'))
+        self.assertEqual(item_calc.unidade_medida, UnidadeMedida.QUILOGRAMA)
+
+    def test_calculo_bloqueia_frequencia_invalida_ou_zerada(self):
+        freq_zerada = FrequenciaDiaria.objects.create(
+            usuario_registro=self.user,
+            data_refeicao=date(2026, 12, 1),
+            refeicao_turno=TipoRefeicao.ALMOCO,
+            total_estudantes_presentes=0
+        )
+        with self.assertRaises(ValidationError):
+            CalculoService.processar_calculo(
+                cardapio=self.cardapio,
+                frequencia=freq_zerada,
+                usuario=self.user
+            )
+
+    def test_calculo_bloqueia_cardapio_sem_receitas(self):
+        cardapio_vazio = Cardapio.objects.create(nome='Cardápio Vazio', refeicao=TipoRefeicao.ALMOCO)
+        with self.assertRaises(ValidationError):
+            CalculoService.processar_calculo(
+                cardapio=cardapio_vazio,
+                frequencia=self.freq,
+                usuario=self.user
+            )
+
+    def test_conversao_automatica_grama_para_quilograma(self):
+        # 1500g deve converter para 1.5kg
+        qtd, un = CalculoService.converter_unidade_amigavel(Decimal('1500'), UnidadeMedida.GRAMA)
+        self.assertEqual(qtd, Decimal('1.5000'))
+        self.assertEqual(un, UnidadeMedida.QUILOGRAMA)
+
+    def test_conversao_automatica_mililitro_para_litro(self):
+        # 2500ml deve converter para 2.5L
+        qtd, un = CalculoService.converter_unidade_amigavel(Decimal('2500'), UnidadeMedida.MILILITRO)
+        self.assertEqual(qtd, Decimal('2.5000'))
+        self.assertEqual(un, UnidadeMedida.LITRO)
+
     def test_calculo_conferir_view(self):
         self.assertFalse(self.calculo.conferido)
         response = self.client.post(f'/calculo/{self.calculo.id}/conferir/', follow=True)
