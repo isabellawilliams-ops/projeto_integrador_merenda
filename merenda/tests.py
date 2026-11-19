@@ -19,6 +19,7 @@ from .models import (
     UnidadeMedida,
     Usuario,
 )
+from .services import CalculoService
 
 
 class UsuarioModelTest(TestCase):
@@ -500,5 +501,185 @@ class FrequenciaViewsTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTrue(FrequenciaDiaria.objects.filter(id=self.freq.id).exists())
         self.assertContains(response, 'Não é possível excluir esta frequência')
+
+
+class CadastrosAdministrativosViewsTest(TestCase):
+    def setUp(self):
+        self.user_nutri = Usuario.objects.create_user(
+            username='nutri_cadastros',
+            password='senha_nutri_123',
+            nome_completo='Dra. Camila Nutricionista',
+            perfil=PerfilUsuario.GESTAO
+        )
+        self.user_merendeira = Usuario.objects.create_user(
+            username='merendeira_cadastros',
+            password='senha_merenda_123',
+            nome_completo='Dona Neide',
+            perfil=PerfilUsuario.REFEITORIO
+        )
+        self.client.login(username='nutri_cadastros', password='senha_nutri_123')
+        self.ingrediente = Ingrediente.objects.create(
+            nome='Batata Doce Roxa',
+            unidade_padrao=UnidadeMedida.QUILOGRAMA,
+            observacoes='Tubérculo lavado e seco.'
+        )
+        self.cardapio = Cardapio.objects.create(
+            nome='Lanche Especial da Quarta',
+            refeicao=TipoRefeicao.LANCHE_MANHA,
+            descricao='Lanche especial saudável.'
+        )
+        self.receita = ReceitaFichaTecnica.objects.create(
+            cardapio=self.cardapio,
+            nome='Batata Doce Assada com Canela',
+            fator_rendimento=Decimal('1.000'),
+            modo_preparo='Cortar e assar em forno industrial a 180°C.'
+        )
+
+    def test_hub_cadastros_acesso(self):
+        response = self.client.get('/cadastros/')
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'cadastros/hub.html')
+        self.assertContains(response, 'Cadastros Administrativos')
+
+    def test_ingredientes_lista_view(self):
+        response = self.client.get('/cadastros/ingredientes/')
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'cadastros/ingredientes_lista.html')
+        self.assertContains(response, 'Batata Doce Roxa')
+
+    def test_ingrediente_criar_view(self):
+        response = self.client.post('/cadastros/ingredientes/novo/', {
+            'nome': 'Mandioca Aipim Fresca',
+            'unidade_padrao': UnidadeMedida.QUILOGRAMA,
+            'observacoes': 'Manter refrigerada.',
+        }, follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(Ingrediente.objects.filter(nome='Mandioca Aipim Fresca').exists())
+
+    def test_ingrediente_editar_view(self):
+        response = self.client.post(f'/cadastros/ingredientes/{self.ingrediente.id}/editar/', {
+            'nome': 'Batata Doce Roxa Orgânica',
+            'unidade_padrao': UnidadeMedida.QUILOGRAMA,
+            'observacoes': 'Lavada.',
+        }, follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.ingrediente.refresh_from_db()
+        self.assertEqual(self.ingrediente.nome, 'Batata Doce Roxa Orgânica')
+
+    def test_ingrediente_excluir_sem_vinculo(self):
+        ing_livre = Ingrediente.objects.create(nome='Cravo da Índia', unidade_padrao=UnidadeMedida.GRAMA)
+        response = self.client.post(f'/cadastros/ingredientes/{ing_livre.id}/excluir/', follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(Ingrediente.objects.filter(id=ing_livre.id).exists())
+
+    def test_cardapio_lista_view(self):
+        response = self.client.get('/cadastros/cardapios/')
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'cadastros/cardapios_lista.html')
+        self.assertContains(response, 'Lanche Especial da Quarta')
+
+    def test_cardapio_criar_view(self):
+        response = self.client.post('/cadastros/cardapios/novo/', {
+            'nome': 'Almoço de Quinta Feijoada Light',
+            'refeicao': TipoRefeicao.ALMOCO,
+            'descricao': 'Com carnes magras.',
+            'ativo': True,
+        }, follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(Cardapio.objects.filter(nome='Almoço de Quinta Feijoada Light').exists())
+
+    def test_cardapio_detalhe_ficha_tecnica(self):
+        response = self.client.get(f'/cadastros/cardapios/{self.cardapio.id}/')
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'cadastros/cardapio_detalhe.html')
+        self.assertContains(response, 'Batata Doce Assada com Canela')
+
+    def test_receita_criar_e_item_adicionar_view(self):
+        # Cria nova receita no cardápio
+        response_rec = self.client.post(f'/cadastros/cardapios/{self.cardapio.id}/receitas/nova/', {
+            'nome': 'Suco Natural de Laranja',
+            'fator_rendimento': '1.000',
+            'modo_preparo': 'Espremer e servir sem açúcar.',
+        }, follow=True)
+        self.assertEqual(response_rec.status_code, 200)
+        rec = ReceitaFichaTecnica.objects.get(nome='Suco Natural de Laranja')
+
+        # Adiciona ingrediente a ela
+        response_item = self.client.post(f'/cadastros/receitas/{rec.id}/itens/novo/', {
+            'ingrediente': self.ingrediente.id,
+            'quantidade_padrao': '0.1000',
+            'unidade_medida': UnidadeMedida.QUILOGRAMA,
+            'base_calculo': BaseCalculo.POR_ALUNO,
+        }, follow=True)
+        self.assertEqual(response_item.status_code, 200)
+        self.assertTrue(ItemReceita.objects.filter(receita=rec, ingrediente=self.ingrediente).exists())
+
+    def test_merendeira_bloqueada_para_criar_ingrediente(self):
+        self.client.login(username='merendeira_cadastros', password='senha_merenda_123')
+        response = self.client.post('/cadastros/ingredientes/novo/', {
+            'nome': 'Ingrediente Não Autorizado',
+            'unidade_padrao': UnidadeMedida.QUILOGRAMA,
+        }, follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(Ingrediente.objects.filter(nome='Ingrediente Não Autorizado').exists())
+        self.assertContains(response, 'Permissão negada')
+
+
+class CalculosModuloViewsTest(TestCase):
+    def setUp(self):
+        self.user = Usuario.objects.create_user(
+            username='cozinheira_calc',
+            password='senha_calc_123',
+            nome_completo='Dona Geralda',
+            perfil=PerfilUsuario.REFEITORIO
+        )
+        self.client.login(username='cozinheira_calc', password='senha_calc_123')
+        self.cardapio = Cardapio.objects.create(nome='Cardápio Teste Almoço', refeicao=TipoRefeicao.ALMOCO)
+        self.ing = Ingrediente.objects.create(nome='Macarrão Parafuso', unidade_padrao=UnidadeMedida.QUILOGRAMA)
+        self.receita = ReceitaFichaTecnica.objects.create(cardapio=self.cardapio, nome='Massa com Molho')
+        ItemReceita.objects.create(
+            receita=self.receita,
+            ingrediente=self.ing,
+            quantidade_padrao=Decimal('0.0800'),
+            unidade_medida=UnidadeMedida.QUILOGRAMA
+        )
+        self.freq = FrequenciaDiaria.objects.create(
+            usuario_registro=self.user,
+            data_refeicao=date.today(),
+            refeicao_turno=TipoRefeicao.ALMOCO,
+            total_estudantes_presentes=100
+        )
+        self.calculo = CalculoService.processar_calculo(
+            cardapio=self.cardapio,
+            frequencia=self.freq,
+            usuario=self.user
+        )
+
+    def test_calculo_detalhe_view(self):
+        response = self.client.get(f'/calculo/{self.calculo.id}/')
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'calculos/detalhe.html')
+        self.assertContains(response, 'Macarrão Parafuso')
+        # 100 alunos * 0.0800 = 8.0000 kg (formatado como 8,0000 em pt-br)
+        self.assertContains(response, '8,0000')
+
+    def test_calculo_conferir_view(self):
+        self.assertFalse(self.calculo.conferido)
+        response = self.client.post(f'/calculo/{self.calculo.id}/conferir/', follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.calculo.refresh_from_db()
+        self.assertTrue(self.calculo.conferido)
+
+    def test_calculo_ajustar_item_com_justificativa_rf09(self):
+        item = self.calculo.itens.first()
+        response = self.client.post(f'/calculo/itens/{item.id}/ajustar/', {
+            'quantidade_ajustada': '9.500',
+            'justificativa_ajuste': 'Acréscimo autorizado para repor turma extra.',
+        }, follow=True)
+        self.assertEqual(response.status_code, 200)
+        item.refresh_from_db()
+        self.assertEqual(item.quantidade_ajustada, Decimal('9.5000'))
+        self.assertContains(response, 'Ajuste registrado')
+
 
 

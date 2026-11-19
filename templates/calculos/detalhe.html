@@ -1,0 +1,230 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Cálculo de Ingredientes — SPAE{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+
+    {% if calculo %}
+    <!-- Header e Ações -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <a href="{% url 'home' %}" class="btn btn-outline-secondary btn-sm rounded-pill px-2 py-1" title="Voltar ao Início">
+                    <i class="bi bi-arrow-left"></i>
+                </a>
+                <h1 class="h4 fw-bold mb-0 text-dark">
+                    <i class="bi bi-calculator-fill text-warning-emphasis me-2"></i>Cálculo Proporcional da Merenda
+                </h1>
+            </div>
+            <p class="text-muted small mb-0">
+                Resultado exato da estimativa de ingredientes para o preparo das refeições
+            </p>
+        </div>
+
+        <div class="d-flex flex-wrap gap-2">
+            <!-- Botão de Conferência Humana -->
+            <form method="post" action="{% url 'calculo_conferir' calculo.id %}" class="d-inline">
+                {% csrf_token %}
+                <button type="submit" class="btn {% if calculo.conferido %}btn-success{% else %}btn-warning text-dark{% endif %} rounded-pill px-4 py-2 shadow-sm d-inline-flex align-items-center gap-2">
+                    {% if calculo.conferido %}
+                        <i class="bi bi-check-circle-fill fs-5"></i>
+                        <span>Conferido pelo Refeitório</span>
+                    {% else %}
+                        <i class="bi bi-clock-history fs-5"></i>
+                        <span>Marcar como Conferido</span>
+                    {% endif %}
+                </button>
+            </form>
+
+            <a href="{% url 'calculo_lista' %}" class="btn btn-outline-secondary rounded-pill px-3 py-2">
+                <i class="bi bi-clock-history me-1"></i>Histórico
+            </a>
+            <button class="btn btn-outline-primary rounded-pill px-3 py-2" onclick="window.print()">
+                <i class="bi bi-printer me-1"></i>Imprimir Resumo
+            </button>
+        </div>
+    </div>
+
+    <!-- Card de Dados de Referência (Cardápio + Frequência) -->
+    <div class="card border-0 shadow-sm rounded-4 bg-white p-4 mb-4">
+        <div class="row g-3 align-items-center">
+            <div class="col-12 col-md-4 border-md-end">
+                <span class="text-muted small text-uppercase fw-semibold d-block mb-1">
+                    <i class="bi bi-card-text me-1"></i>Cardápio Aplicado
+                </span>
+                <h2 class="h5 fw-bold text-dark mb-1">{{ calculo.cardapio.nome }}</h2>
+                <span class="badge bg-light text-dark border">
+                    <i class="bi bi-clock me-1 text-primary"></i>{{ calculo.cardapio.get_refeicao_display }}
+                </span>
+            </div>
+
+            <div class="col-12 col-md-4 border-md-end">
+                <span class="text-muted small text-uppercase fw-semibold d-block mb-1">
+                    <i class="bi bi-people-fill me-1"></i>Presença de Estudantes
+                </span>
+                <div class="d-flex align-items-baseline gap-2">
+                    <span class="display-6 fw-bold text-primary">{{ calculo.frequencia.total_estudantes_presentes }}</span>
+                    <span class="text-muted">alunos confirmados</span>
+                </div>
+                <small class="text-secondary d-block">
+                    Data da refeição: <strong>{{ calculo.frequencia.data_refeicao|date:"d/m/Y" }}</strong>
+                </small>
+            </div>
+
+            <div class="col-12 col-md-4">
+                <span class="text-muted small text-uppercase fw-semibold d-block mb-1">
+                    <i class="bi bi-shield-check me-1"></i>Validação e Auditoria
+                </span>
+                <div class="mb-1">
+                    {% if calculo.conferido %}
+                        <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-1 fs-6">
+                            <i class="bi bi-check-circle-fill me-1"></i>Conferência Aprovada
+                        </span>
+                    {% else %}
+                        <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill px-3 py-1 fs-6">
+                            <i class="bi bi-exclamation-triangle-fill me-1"></i>Pendente de Validação
+                        </span>
+                    {% endif %}
+                </div>
+                <small class="text-muted d-block">
+                    Responsável: {{ calculo.usuario_responsavel.nome_completo|default:calculo.usuario_responsavel.username }}
+                </small>
+            </div>
+        </div>
+    </div>
+
+    <!-- LISTA DE INGREDIENTES EM DESTAQUE (LEGÍVEL À DISTÂNCIA DE UM BRAÇO) -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="h5 fw-bold text-dark mb-0">
+            <i class="bi bi-basket2-fill text-success me-2"></i>Lista dos Ingredientes Calculados
+        </h3>
+        <span class="badge bg-success rounded-pill px-3 py-2 fs-6">
+            {{ calculo.itens.count }} insumo(s)
+        </span>
+    </div>
+
+    <div class="row g-3 mb-4">
+        {% for item in calculo.itens.all %}
+        <div class="col-12 col-md-6 col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4 bg-white p-4 h-100 d-flex flex-column justify-content-between">
+                <div>
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <span class="badge bg-light text-secondary border rounded-pill">
+                            Insumo
+                        </span>
+                        {% if item.quantidade_ajustada %}
+                            <span class="badge bg-warning text-dark rounded-pill px-2 py-1 small">
+                                <i class="bi bi-pencil-fill me-1"></i>Ajustado Manualmente
+                            </span>
+                        {% endif %}
+                    </div>
+
+                    <h4 class="h5 fw-bold text-dark mb-3">{{ item.ingrediente.nome }}</h4>
+
+                    <!-- Quantidade Grande (Legível à distância de um braço no refeitório) -->
+                    <div class="p-3 bg-light rounded-4 text-center border mb-3">
+                        {% if item.quantidade_ajustada %}
+                            <span class="text-muted text-decoration-line-through small d-block mb-1">
+                                Calculado: {{ item.quantidade_calculada }} {{ item.get_unidade_medida_display }}
+                            </span>
+                            <span class="display-6 fw-bold text-warning-emphasis d-block">
+                                {{ item.quantidade_ajustada }} <span class="fs-4">{{ item.get_unidade_medida_display }}</span>
+                            </span>
+                        {% else %}
+                            <span class="display-6 fw-bold text-success d-block">
+                                {{ item.quantidade_calculada }} <span class="fs-4">{{ item.get_unidade_medida_display }}</span>
+                            </span>
+                        {% endif %}
+                    </div>
+
+                    {% if item.quantidade_ajustada %}
+                    <div class="alert alert-warning border-0 rounded-3 p-2 small mb-3">
+                        <strong>Justificativa (RF09):</strong> {{ item.justificativa_ajuste }}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="pt-2 border-top">
+                    <button type="button" class="btn btn-outline-secondary btn-sm w-100 rounded-pill py-2" data-bs-toggle="modal" data-bs-target="#modalAjuste{{ item.id }}">
+                        <i class="bi bi-pencil-square me-1"></i>
+                        {% if item.quantidade_ajustada %}Editar Ajuste{% else %}Ajustar Quantidade{% endif %}
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal de Ajuste com Justificativa Obrigatória (RF09) -->
+        <div class="modal fade" id="modalAjuste{{ item.id }}" tabindex="-1" aria-labelledby="modalLabel{{ item.id }}" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content rounded-4 border-0 shadow">
+                    <div class="modal-header bg-warning-subtle text-warning-emphasis p-3 px-4">
+                        <h5 class="modal-title h6 fw-bold" id="modalLabel{{ item.id }}">
+                            <i class="bi bi-pencil-square me-1"></i>Ajuste Manual: {{ item.ingrediente.nome }}
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                    </div>
+                    <form method="post" action="{% url 'calculo_ajustar_item' item.id %}">
+                        {% csrf_token %}
+                        <div class="modal-body p-4">
+                            <p class="small text-muted mb-3">
+                                Quantidade sugerida automaticamente pelo sistema: <strong>{{ item.quantidade_calculada }} {{ item.get_unidade_medida_display }}</strong>
+                            </p>
+                            <div class="mb-3">
+                                <label class="form-label small fw-semibold text-secondary">
+                                    Nova Quantidade Ajustada (em {{ item.get_unidade_medida_display }}) *
+                                </label>
+                                <input type="number" step="0.001" min="0" name="quantidade_ajustada" class="form-control form-control-lg" value="{{ item.quantidade_ajustada|default:item.quantidade_calculada }}" required>
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label small fw-semibold text-secondary">
+                                    Justificativa Obrigatória do Ajuste (RF09) *
+                                </label>
+                                <textarea name="justificativa_ajuste" rows="3" class="form-control" placeholder="Informe o motivo da alteração (ex: evento escolar, sobra de arroz preservada, visita pedagógica)..." required>{{ item.justificativa_ajuste }}</textarea>
+                                <div class="form-text small text-muted">A justificativa é registrada para fins de auditoria e controle de estoque.</div>
+                            </div>
+                        </div>
+                        <div class="modal-footer p-3 bg-light">
+                            <button type="button" class="btn btn-outline-secondary rounded-pill px-3" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-warning rounded-pill px-4">Salvar Ajuste</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        {% empty %}
+        <div class="col-12">
+            <div class="card border-0 shadow-sm rounded-4 bg-white p-5 text-center text-muted">
+                <i class="bi bi-basket2 fs-1 text-secondary opacity-50 mb-2"></i>
+                <h4 class="h5 fw-bold text-dark mb-1">Nenhum ingrediente calculado</h4>
+                <p class="small mb-0">Verifique se as receitas do cardápio possuem ingredientes associados na ficha técnica.</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% else %}
+    <!-- Caso não exista cálculo para a data -->
+    <div class="card border-0 shadow-sm rounded-4 bg-white p-5 text-center">
+        <div class="login-logo-circle mb-3 mx-auto" style="width: 72px; height: 72px; font-size: 2.2rem; background: var(--spae-primary-light); color: var(--spae-primary-dark); border: none;">
+            <i class="bi bi-calculator"></i>
+        </div>
+        <h2 class="h4 fw-bold text-dark mb-2">Nenhum Cálculo Encontrado para Hoje</h2>
+        <p class="text-muted small mb-4" style="max-width: 480px; margin: auto;">
+            Para calcular os ingredientes necessários para a merenda, selecione o cardápio e a frequência diária de estudantes.
+        </p>
+        <div>
+            <a href="{% url 'calculo_gerar' %}" class="btn btn-primary rounded-pill px-4 py-3 fs-6 shadow-sm">
+                <i class="bi bi-play-circle-fill me-1"></i>Gerar Novo Cálculo de Ingredientes
+            </a>
+            <a href="{% url 'calculo_lista' %}" class="btn btn-outline-secondary rounded-pill px-4 py-3 ms-2">
+                Ver Histórico de Cálculos
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

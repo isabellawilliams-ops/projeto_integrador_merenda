@@ -41,6 +41,9 @@
                     <a href="{% url 'frequencia_lista' %}" class="btn btn-outline-primary btn-sm rounded-pill px-3 py-2">
                         <i class="bi bi-clipboard-check me-1"></i>Frequências
                     </a>
+                    <a href="{% url 'cadastros_hub' %}" class="btn btn-outline-success btn-sm rounded-pill px-3 py-2">
+                        <i class="bi bi-gear-wide-connected me-1"></i>Cadastros
+                    </a>
                     {% if usuario.is_staff or usuario.perfil == 'admin' %}
                     <a href="{% url 'admin:index' %}" class="btn btn-outline-secondary btn-sm rounded-pill px-3 py-2" target="_blank">
                         <i class="bi bi-sliders me-1"></i>Painel Admin
@@ -167,7 +170,7 @@
                                 <i class="bi bi-plus-circle me-1"></i>Lançar Presença de Estudantes
                             </a>
                             {% if calculo_hoje %}
-                            <a href="{% url 'admin:merenda_calculodiario_change' calculo_hoje.id %}" target="_blank" class="btn btn-outline-success w-100 py-2 rounded-4">
+                            <a href="{% url 'calculo_detalhe' calculo_hoje.id %}" class="btn btn-outline-success w-100 py-2 rounded-4">
                                 <i class="bi bi-card-checklist me-1"></i>Ver e Conferir Ingredientes
                             </a>
                             {% endif %}

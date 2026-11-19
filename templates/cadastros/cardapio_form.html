@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ titulo }} — SPAE{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-8 col-lg-7">
+
+            <div class="mb-3">
+                <a href="{% url 'cardapio_lista' %}" class="btn btn-outline-secondary btn-sm rounded-pill px-3 py-2">
+                    <i class="bi bi-arrow-left me-1"></i>Voltar aos Cardápios
+                </a>
+            </div>
+
+            <div class="card border-0 shadow-sm rounded-4 bg-white overflow-hidden">
+                <div class="card-header bg-success text-white p-4 text-center">
+                    <div class="login-logo-circle mb-2 mx-auto" style="width: 54px; height: 54px; font-size: 1.6rem; background: rgba(255,255,255,0.2); border: none;">
+                        <i class="bi bi-journal-plus"></i>
+                    </div>
+                    <h1 class="h4 fw-bold mb-1">{{ titulo }}</h1>
+                    <p class="small mb-0 opacity-75">
+                        Definição do cardápio, tipo de refeição e orientações nutricionais
+                    </p>
+                </div>
+
+                <div class="card-body p-4">
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger rounded-4 py-2 px-3 small mb-3 border-0 shadow-sm">
+                        {% for error in form.non_field_errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+
+                        <!-- Campo Nome -->
+                        <div class="mb-3">
+                            <label for="{{ form.nome.id_for_label }}" class="form-label fw-semibold small text-secondary">
+                                <i class="bi bi-card-heading me-1"></i>Nome do Cardápio *
+                            </label>
+                            {{ form.nome }}
+                            {% if form.nome.errors %}
+                                <div class="text-danger small mt-1 ps-1">
+                                    {{ form.nome.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Grid: Refeição e Data -->
+                        <div class="row g-3 mb-3">
+                            <div class="col-12 col-md-6">
+                                <label for="{{ form.refeicao.id_for_label }}" class="form-label fw-semibold small text-secondary">
+                                    <i class="bi bi-clock me-1"></i>Tipo de Refeição *
+                                </label>
+                                {{ form.refeicao }}
+                                {% if form.refeicao.errors %}
+                                    <div class="text-danger small mt-1 ps-1">
+                                        {{ form.refeicao.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <label for="{{ form.data_referencia.id_for_label }}" class="form-label fw-semibold small text-secondary">
+                                    <i class="bi bi-calendar3 me-1"></i>Data Prevista (Opcional)
+                                </label>
+                                {{ form.data_referencia }}
+                                {% if form.data_referencia.errors %}
+                                    <div class="text-danger small mt-1 ps-1">
+                                        {{ form.data_referencia.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Campo Descrição -->
+                        <div class="mb-3">
+                            <label for="{{ form.descricao.id_for_label }}" class="form-label fw-semibold small text-secondary">
+                                <i class="bi bi-card-text me-1"></i>Descrição Nutricional / Observações
+                            </label>
+                            {{ form.descricao }}
+                            {% if form.descricao.errors %}
+                                <div class="text-danger small mt-1 ps-1">
+                                    {{ form.descricao.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Checkbox Ativo -->
+                        <div class="form-check form-switch mb-4">
+                            {{ form.ativo }}
+                            <label class="form-check-label fw-semibold small text-secondary ms-2" for="{{ form.ativo.id_for_label }}">
+                                Cardápio ativo para seleção e cálculo de ingredientes
+                            </label>
+                        </div>
+
+                        <!-- Botão Salvar -->
+                        <button type="submit" class="btn btn-success w-100 py-3 fs-5 rounded-4 shadow-sm mb-2">
+                            <i class="bi bi-check2-circle me-1"></i>
+                            {% if modo_edicao %}Salvar Alterações{% else %}Salvar e Adicionar Preparações{% endif %}
+                        </button>
+
+                        <a href="{% url 'cardapio_lista' %}" class="btn btn-light w-100 py-2 rounded-4 text-muted">
+                            Cancelar
+                        </a>
+                    </form>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -302,17 +302,17 @@ python manage.py test
   - [x] Configuração do projeto Django com settings em português (`pt-br`, `America/Sao_Paulo`).
   - [x] Implementação do modelo `Usuario` com perfis (`refeitorio`, `frequencia`, `gestao`, `admin`).
   - [x] Tela de Login e controle de acesso por perfil.
-- [ ] **Etapa 2: Módulo de Cardápios e Ingredientes**
+- [x] **Etapa 2: Módulo de Cardápios e Ingredientes**
   - [x] Model de Ingredientes com unidades padrão e admin (`g`, `kg`, `ml`, `L`, `un`).
   - [x] CRUD de Cardápios e Fichas Técnicas (`ReceitaFichaTecnica`, `ItemReceita`).
   - [x] Validação de quantidades e unidades.
 - [x] **Etapa 3: Módulo de Frequência Diária**
   - [x] Formulário ágil mobile para lançamento de presença por data e turno/refeição.
   - [x] Histórico de presenças.
-- [ ] **Etapa 4: Motor de Cálculo e Conferência**
-  - [ ] Implementação do algoritmo de cálculo proporcional.
-  - [ ] Tela de visualização limpa do cálculo com lista de ingredientes (destaque visual).
-  - [ ] Fluxo de conferência (`conferido=True`) e registro de ajuste justificado.
+- [x] **Etapa 4: Motor de Cálculo e Conferência**
+  - [x] Implementação do algoritmo de cálculo proporcional.
+  - [x] Tela de visualização limpa do cálculo com lista de ingredientes (destaque visual).
+  - [x] Fluxo de conferência (`conferido=True`) e registro de ajuste justificado.
 - [ ] **Etapa 5: Refinamento Mobile & Validação com Usuárias**
   - [ ] Ajuste de layout para dispositivos móveis (botões grandes, contrastes).
   - [x] Seeds / Fixtures com receitas reais de merenda para testes e demonstração.
