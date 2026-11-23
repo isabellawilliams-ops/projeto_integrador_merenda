@@ -74,6 +74,11 @@
                                 <i class="bi bi-key me-2 text-warning-emphasis"></i>Alterar Senha
                             </a>
                         </li>
+                        <li>
+                            <a class="dropdown-item rounded-3 py-2" href="{% url 'ajuda' %}">
+                                <i class="bi bi-question-circle me-2 text-success"></i>Ajuda e Manual
+                            </a>
+                        </li>
                         {% if user.is_superuser or user.perfil == 'admin' %}
                         <li><hr class="dropdown-divider"></li>
                         <li>

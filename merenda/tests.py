@@ -913,6 +913,14 @@ class AutenticacaoAutorizacaoModuloTest(TestCase):
         self.assertFalse(response.context['user'].is_authenticated)
         self.assertContains(response, 'Sessão encerrada com sucesso')
 
+    def test_ajuda_view_carrega_sucesso(self):
+        self.client.login(username='maria_merenda', password='senha_refeitorio_123')
+        response = self.client.get('/ajuda/')
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'ajuda.html')
+        self.assertContains(response, 'Guia Rápido e Documentação do Usuário')
+        self.assertContains(response, 'Fórmula Fundamental do SPAE')
+
     def test_meu_perfil_atualizacao_nome(self):
         self.client.login(username='maria_merenda', password='senha_refeitorio_123')
         response = self.client.get('/meu-perfil/')

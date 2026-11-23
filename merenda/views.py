@@ -85,6 +85,12 @@ def logout_view(request):
     return redirect('login')
 
 
+@login_required
+def ajuda_view(request):
+    """Exibe o guia rápido interativo e a documentação do usuário no sistema."""
+    return render(request, 'ajuda.html')
+
+
 # ========================================================
 # AUTOATENDIMENTO DO USUÁRIO (PERFIL E ALTERAÇÃO DE SENHA)
 # ========================================================

@@ -6,6 +6,7 @@ urlpatterns = [
     path('', views.home_view, name='home'),
     path('login/', views.SPALoginView.as_view(), name='login'),
     path('logout/', views.logout_view, name='logout'),
+    path('ajuda/', views.ajuda_view, name='ajuda'),
     path('meu-perfil/', views.meu_perfil_view, name='meu_perfil'),
     path('alterar-senha/', views.alterar_senha_view, name='alterar_senha'),
 

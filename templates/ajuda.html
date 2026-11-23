@@ -1,0 +1,159 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Ajuda e Guia Rápido — SPAE{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+
+    <!-- Header -->
+    <div class="d-flex align-items-center gap-3 mb-4">
+        <a href="{% url 'home' %}" class="btn btn-outline-secondary btn-sm rounded-pill px-3 py-2" title="Voltar ao início">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+        <div>
+            <h1 class="h4 fw-bold text-dark mb-1">
+                <i class="bi bi-question-circle-fill text-success me-2"></i>Guia Rápido e Documentação do Usuário
+            </h1>
+            <p class="text-muted small mb-0">Instruções práticas para o dia a dia da alimentação escolar no SPAE</p>
+        </div>
+    </div>
+
+    <!-- Cards de Perfis -->
+    <div class="row g-4 mb-4">
+        <!-- 1. Refeitório -->
+        <div class="col-12 col-md-6 col-lg-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100 bg-white p-4 d-flex flex-column justify-content-between">
+                <div>
+                    <div class="p-3 bg-warning-subtle text-warning-emphasis rounded-4 fs-3 mb-3 d-inline-block">
+                        <i class="bi bi-egg-fried"></i>
+                    </div>
+                    <h2 class="h5 fw-bold text-dark mb-2">Merendeiras</h2>
+                    <span class="badge bg-warning text-dark rounded-pill px-3 py-1 small mb-3">Perfil Refeitório</span>
+                    <ul class="text-muted small ps-3 mb-3">
+                        <li>Visualização de quantidades em fontes grandes.</li>
+                        <li>Checklist dos insumos separados no estoque.</li>
+                        <li>Ajustes manuais com justificativa (RF09).</li>
+                        <li>Marcação de merenda conferida (`conferido=True`).</li>
+                    </ul>
+                </div>
+                <a href="{% url 'calculo_hoje' %}" class="btn btn-outline-warning text-dark w-100 rounded-pill py-2">
+                    Acessar Cálculo &rarr;
+                </a>
+            </div>
+        </div>
+
+        <!-- 2. Frequência -->
+        <div class="col-12 col-md-6 col-lg-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100 bg-white p-4 d-flex flex-column justify-content-between">
+                <div>
+                    <div class="p-3 bg-info-subtle text-info-emphasis rounded-4 fs-3 mb-3 d-inline-block">
+                        <i class="bi bi-people-fill"></i>
+                    </div>
+                    <h2 class="h5 fw-bold text-dark mb-2">Secretaria / Portaria</h2>
+                    <span class="badge bg-info-subtle text-info-emphasis rounded-pill px-3 py-1 small mb-3">Perfil Frequência</span>
+                    <ul class="text-muted small ps-3 mb-3">
+                        <li>Lançamento rápido do total de alunos presentes.</li>
+                        <li>Seleção da data e turno correspondente.</li>
+                        <li>Atualização transparente sem duplicidade.</li>
+                        <li>Gatilho para o cálculo diário da cozinha.</li>
+                    </ul>
+                </div>
+                <a href="{% url 'frequencia_registrar' %}" class="btn btn-outline-info w-100 rounded-pill py-2">
+                    Lançar Presença &rarr;
+                </a>
+            </div>
+        </div>
+
+        <!-- 3. Gestão -->
+        <div class="col-12 col-md-6 col-lg-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100 bg-white p-4 d-flex flex-column justify-content-between">
+                <div>
+                    <div class="p-3 bg-primary-subtle text-primary rounded-4 fs-3 mb-3 d-inline-block">
+                        <i class="bi bi-journal-check"></i>
+                    </div>
+                    <h2 class="h5 fw-bold text-dark mb-2">Nutricionista</h2>
+                    <span class="badge bg-primary-subtle text-primary rounded-pill px-3 py-1 small mb-3">Perfil Gestão</span>
+                    <ul class="text-muted small ps-3 mb-3">
+                        <li>Cadastro e ativação de cardápios.</li>
+                        <li>Fichas técnicas e modos de preparo.</li>
+                        <li>Dosagens por estudante e fatores de rendimento.</li>
+                        <li>Catálogo de ingredientes homologados.</li>
+                    </ul>
+                </div>
+                <a href="{% url 'cadastros_hub' %}" class="btn btn-outline-primary w-100 rounded-pill py-2">
+                    Ir para Cadastros &rarr;
+                </a>
+            </div>
+        </div>
+
+        <!-- 4. Administrador -->
+        <div class="col-12 col-md-6 col-lg-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100 bg-white p-4 d-flex flex-column justify-content-between">
+                <div>
+                    <div class="p-3 bg-dark text-white rounded-4 fs-3 mb-3 d-inline-block">
+                        <i class="bi bi-shield-lock-fill"></i>
+                    </div>
+                    <h2 class="h5 fw-bold text-dark mb-2">TI e Coordenação</h2>
+                    <span class="badge bg-dark text-white rounded-pill px-3 py-1 small mb-3">Perfil Administrador</span>
+                    <ul class="text-muted small ps-3 mb-3">
+                        <li>Gestão centralizada de usuários e papéis.</li>
+                        <li>Ativação e desativação segura de contas.</li>
+                        <li>Redefinição direta de senhas.</li>
+                        <li>Garantia da integridade do sistema.</li>
+                    </ul>
+                </div>
+                <a href="{% url 'usuario_lista' %}" class="btn btn-outline-dark w-100 rounded-pill py-2">
+                    Gerenciar Usuários &rarr;
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bloco de Dúvidas Frequentes e Regras de Conversão -->
+    <div class="row g-4">
+        <div class="col-12 col-lg-7">
+            <div class="card border-0 shadow-sm rounded-4 bg-white p-4">
+                <h2 class="h5 fw-bold text-dark mb-3">
+                    <i class="bi bi-calculator-fill text-success me-2"></i>Fórmula e Regras de Unidades
+                </h2>
+                <div class="p-3 bg-light rounded-4 border mb-3">
+                    <p class="mb-1 text-dark fw-semibold">Fórmula Fundamental do SPAE:</p>
+                    <code class="fs-6 text-dark d-block mb-1">Qtd Calculada = Total Estudantes × Qtd Padrão × Fator de Rendimento</code>
+                    <small class="text-muted">Ajuste automático para preparações em massa, volume ou unidades.</small>
+                </div>
+                <h3 class="h6 fw-bold text-secondary text-uppercase mb-2">Conversões Automáticas no Refeitório:</h3>
+                <ul class="text-muted small mb-0">
+                    <li class="mb-1"><strong>1.000 g ou mais:</strong> Exibido automaticamente em <strong>kg</strong> (ex: 1.500 g &rarr; 1,5 kg).</li>
+                    <li class="mb-1"><strong>Menos de 1 kg:</strong> Exibido automaticamente em <strong>g</strong> (ex: 0,45 kg &rarr; 450 g).</li>
+                    <li class="mb-1"><strong>1.000 ml ou mais:</strong> Exibido automaticamente em <strong>L</strong> (ex: 2.500 ml &rarr; 2,5 L).</li>
+                    <li class="mb-1"><strong>Menos de 1 L:</strong> Exibido automaticamente em <strong>ml</strong> (ex: 0,75 L &rarr; 750 ml).</li>
+                    <li><strong>Rigidez Dimensional:</strong> O sistema nunca converte peso para volume sem fator de densidade homologado.</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-5">
+            <div class="card border-0 shadow-sm rounded-4 bg-white p-4 h-100">
+                <h2 class="h5 fw-bold text-dark mb-3">
+                    <i class="bi bi-printer-fill text-primary me-2"></i>Impressão e Arquivos
+                </h2>
+                <p class="text-muted small mb-3">
+                    O SPAE disponibiliza a ficha diária em formatos adequados para o trabalho operacional e prestação de contas:
+                </p>
+                <div class="d-flex flex-column gap-2">
+                    <div class="p-3 border rounded-3 bg-light">
+                        <strong class="d-block text-dark"><i class="bi bi-file-earmark-text me-1 text-primary"></i>Ficha de Prancheta A4</strong>
+                        <small class="text-muted">Pronta para impressão física com caixas [ ] para conferência a caneta e termos de assinatura.</small>
+                    </div>
+                    <div class="p-3 border rounded-3 bg-light">
+                        <strong class="d-block text-dark"><i class="bi bi-file-earmark-spreadsheet me-1 text-success"></i>Exportação em Planilha (CSV)</strong>
+                        <small class="text-muted">Compatível com Excel e LibreOffice com codificação brasileira (UTF-8 com BOM e ponto-e-vírgula).</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
