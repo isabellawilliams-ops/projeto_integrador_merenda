@@ -305,6 +305,13 @@ class FrequenciaDiaria(models.Model):
             )
         ]
 
+    def clean(self):
+        super().clean()
+        if self.total_estudantes_presentes is not None and self.total_estudantes_presentes <= 0:
+            raise ValidationError({
+                'total_estudantes_presentes': 'A contagem de estudantes presentes deve ser maior que zero.'
+            })
+
     def __str__(self):
         return f"{self.data_refeicao.strftime('%d/%m/%Y')} - {self.get_refeicao_turno_display()}: {self.total_estudantes_presentes} alunos"
 

@@ -502,6 +502,17 @@ class FrequenciaViewsTest(TestCase):
         self.assertTrue(FrequenciaDiaria.objects.filter(id=self.freq.id).exists())
         self.assertContains(response, 'Não é possível excluir esta frequência')
 
+    def test_frequencia_model_clean_bloqueia_zero_ou_negativo(self):
+        freq_invalida = FrequenciaDiaria(
+            usuario_registro=self.user_secretaria,
+            data_refeicao=date(2026, 11, 25),
+            refeicao_turno=TipoRefeicao.ALMOCO,
+            total_estudantes_presentes=0
+        )
+        with self.assertRaises(ValidationError) as ctx:
+            freq_invalida.clean()
+        self.assertIn('total_estudantes_presentes', ctx.exception.message_dict)
+
 
 class CadastrosAdministrativosViewsTest(TestCase):
     def setUp(self):
