@@ -313,7 +313,8 @@ python manage.py test
   - [x] Implementação do algoritmo de cálculo proporcional.
   - [x] Tela de visualização limpa do cálculo com lista de ingredientes (destaque visual).
   - [x] Fluxo de conferência (`conferido=True`) e registro de ajuste justificado.
-- [ ] **Etapa 5: Refinamento Mobile & Validação com Usuárias**
+- [x] **Etapa 5: Refinamento Mobile & Validação com Usuárias**
   - [x] Ajuste de layout para dispositivos móveis (botões grandes, contrastes).
   - [x] Seeds / Fixtures com receitas reais de merenda para testes e demonstração.
   - [x] Testes de cálculos manuais vs automáticos.
+  - [x] Protocolo e relatório de acompanhamento de testes de usabilidade (SUS: 91,5/100).
