@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/6.1/ref/settings/
 import os
 import urllib.parse
 from pathlib import Path
+import dj_database_url
 from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -56,6 +57,7 @@ AUTH_USER_MODEL = 'merenda.Usuario'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -92,17 +94,8 @@ DATABASE_URL = os.getenv('DATABASE_URL')
 DB_ENGINE = os.getenv('DB_ENGINE', 'sqlite').lower()
 
 if DATABASE_URL:
-    url = urllib.parse.urlparse(DATABASE_URL)
-    is_postgres = 'postgres' in url.scheme
     DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql' if is_postgres else 'django.db.backends.sqlite3',
-            'NAME': url.path.lstrip('/'),
-            'USER': url.username or '',
-            'PASSWORD': url.password or '',
-            'HOST': url.hostname or 'localhost',
-            'PORT': str(url.port or '5432') if is_postgres else '',
-        }
+        'default': dj_database_url.config(default=DATABASE_URL, conn_max_age=600, ssl_require=True)
     }
 elif DB_ENGINE in ('postgresql', 'postgres'):
     DATABASES = {
@@ -159,7 +152,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.1/howto/static-files/
 
 STATIC_URL = 'static/'
-STATICFILES_DIRS = [BASE_DIR / 'static']
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # Autenticação e Redirecionamentos SPAE
 LOGIN_URL = 'login'
