@@ -718,11 +718,43 @@ class CalculosModuloViewsTest(TestCase):
         self.assertEqual(qtd, Decimal('1.5000'))
         self.assertEqual(un, UnidadeMedida.QUILOGRAMA)
 
+    def test_conversao_automatica_quilograma_fracionario_para_grama(self):
+        # 0.450kg deve converter para 450g para facilitar pesagem no refeitório
+        qtd, un = CalculoService.converter_unidade_amigavel(Decimal('0.4500'), UnidadeMedida.QUILOGRAMA)
+        self.assertEqual(qtd, Decimal('450.0000'))
+        self.assertEqual(un, UnidadeMedida.GRAMA)
+
     def test_conversao_automatica_mililitro_para_litro(self):
         # 2500ml deve converter para 2.5L
         qtd, un = CalculoService.converter_unidade_amigavel(Decimal('2500'), UnidadeMedida.MILILITRO)
         self.assertEqual(qtd, Decimal('2.5000'))
         self.assertEqual(un, UnidadeMedida.LITRO)
+
+    def test_conversao_automatica_litro_fracionario_para_mililitro(self):
+        # 0.750L deve converter para 750ml
+        qtd, un = CalculoService.converter_unidade_amigavel(Decimal('0.7500'), UnidadeMedida.LITRO)
+        self.assertEqual(qtd, Decimal('750.0000'))
+        self.assertEqual(un, UnidadeMedida.MILILITRO)
+
+    def test_unidade_contavel_permanece_inalterada(self):
+        # 24 unidades devem permanecer 24 unidades
+        qtd, un = CalculoService.converter_unidade_amigavel(Decimal('24.0000'), UnidadeMedida.UNIDADE)
+        self.assertEqual(qtd, Decimal('24.0000'))
+        self.assertEqual(un, UnidadeMedida.UNIDADE)
+
+    def test_validacao_bloqueia_incompatibilidade_de_grandeza_fisica(self):
+        # Ingrediente 'Macarrão Parafuso' é cadastrado como kg (massa)
+        # Tentar cadastrar item de receita em litros (volume) deve gerar ValidationError
+        item_invalido = ItemReceita(
+            receita=self.receita,
+            ingrediente=self.ing,
+            quantidade_padrao=Decimal('1.0000'),
+            unidade_medida=UnidadeMedida.LITRO,
+            base_calculo=BaseCalculo.POR_ALUNO
+        )
+        with self.assertRaises(ValidationError) as ctx:
+            item_invalido.full_clean()
+        self.assertIn('Incompatibilidade de grandeza física', str(ctx.exception))
 
     def test_calculo_conferir_view(self):
         self.assertFalse(self.calculo.conferido)

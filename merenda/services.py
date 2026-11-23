@@ -16,15 +16,21 @@ class CalculoService:
     @staticmethod
     def converter_unidade_amigavel(quantidade: Decimal, unidade: str) -> tuple[Decimal, str]:
         """
-        Ajusta a unidade para leitura facilitada no refeitório:
+        Ajusta a unidade para leitura facilitada no refeitório (Regra 3.2 do AGENTS.md):
         - g para kg quando quantidade >= 1000g (1000g = 1kg)
+        - kg para g quando quantidade < 1kg e > 0g (ex: 0.8kg = 800g para itens em pequenas dosagens)
         - ml para L quando quantidade >= 1000ml (1000ml = 1L)
+        - L para ml quando quantidade < 1L e > 0L (ex: 0.5L = 500ml)
         - un permanece inalterada
         """
         if unidade == UnidadeMedida.GRAMA and quantidade >= Decimal('1000'):
             return (quantidade / Decimal('1000')).quantize(Decimal('0.0001')), UnidadeMedida.QUILOGRAMA
+        elif unidade == UnidadeMedida.QUILOGRAMA and Decimal('0') < quantidade < Decimal('1'):
+            return (quantidade * Decimal('1000')).quantize(Decimal('0.0001')), UnidadeMedida.GRAMA
         elif unidade == UnidadeMedida.MILILITRO and quantidade >= Decimal('1000'):
             return (quantidade / Decimal('1000')).quantize(Decimal('0.0001')), UnidadeMedida.LITRO
+        elif unidade == UnidadeMedida.LITRO and Decimal('0') < quantidade < Decimal('1'):
+            return (quantidade * Decimal('1000')).quantize(Decimal('0.0001')), UnidadeMedida.MILILITRO
         return quantidade.quantize(Decimal('0.0001')), unidade
 
     @staticmethod

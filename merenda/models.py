@@ -59,6 +59,22 @@ class UnidadeMedida(models.TextChoices):
     LITRO = 'L', 'Litro (L)'
     UNIDADE = 'un', 'Unidade (un)'
 
+    @classmethod
+    def get_grandeza(cls, unidade: str) -> str:
+        """Retorna a grandeza física da unidade: massa, volume ou unidade contável."""
+        if unidade in (cls.GRAMA, cls.QUILOGRAMA):
+            return 'massa'
+        elif unidade in (cls.MILILITRO, cls.LITRO):
+            return 'volume'
+        elif unidade == cls.UNIDADE:
+            return 'unidade'
+        return 'desconhecida'
+
+    @classmethod
+    def sao_compativeis(cls, u1: str, u2: str) -> bool:
+        """Verifica se duas unidades pertencem à mesma grandeza física (compatibilidade dimensional)."""
+        return cls.get_grandeza(u1) == cls.get_grandeza(u2)
+
 
 class Ingrediente(models.Model):
     nome = models.CharField(
@@ -232,6 +248,19 @@ class ItemReceita(models.Model):
         super().clean()
         if self.quantidade_padrao is not None and self.quantidade_padrao <= Decimal('0'):
             raise ValidationError({'quantidade_padrao': 'A quantidade padrão deve ser maior que zero.'})
+        # Validação de compatibilidade de grandezas (Regra 3.2 do AGENTS.md)
+        if self.ingrediente_id and self.unidade_medida:
+            un_padrao = self.ingrediente.unidade_padrao
+            if not UnidadeMedida.sao_compativeis(self.unidade_medida, un_padrao):
+                raise ValidationError({
+                    'unidade_medida': (
+                        f"Incompatibilidade de grandeza física: o ingrediente '{self.ingrediente.nome}' "
+                        f"é cadastrado como {self.ingrediente.get_unidade_padrao_display()} "
+                        f"({UnidadeMedida.get_grandeza(un_padrao)}), não sendo permitida a unidade "
+                        f"{self.get_unidade_medida_display()} ({UnidadeMedida.get_grandeza(self.unidade_medida)}) "
+                        f"sem fator de conversão/densidade homologado."
+                    )
+                })
 
     def __str__(self):
         return f"{self.ingrediente.nome}: {self.quantidade_padrao} {self.get_unidade_medida_display()} ({self.get_base_calculo_display()})"
